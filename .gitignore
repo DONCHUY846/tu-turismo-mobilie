@@ -47,3 +47,9 @@ example
 # EAS
 *.orig.jks
 eas-build-*.log
+
+# opencode (contiene API keys)
+/opencode.json
+/opencode.jsonc
+/.opencode/opencode.json
+/.opencode/opencode.jsonc
