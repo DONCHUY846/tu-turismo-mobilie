@@ -34,6 +34,24 @@ Run lint and typecheck before declaring any task done.
 Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
 Docs: https://docs.expo.dev/eas/index.md
 
+## Componentes: react-native-reusables
+
+Los componentes base se agregan con la CLI de react-native-reusables (shadcn/ui para React Native). **Nunca los escribas a mano ni edites `src/components/ui/`**: si falta uno, se agrega con el comando.
+
+```bash
+npx @react-native-reusables/cli@latest add <componentes>   # ej: add button card badge text icon separator
+npx @react-native-reusables/cli@latest doctor              # verifica la instalación
+```
+
+Opciones útiles de `add`: `-y` (sin confirmaciones), `-o` (sobrescribe), `-p <path>` (destino, por defecto usa el alias `ui` de `components.json`), `-a` (todos), `--styling-library nativewind|uniwind`.
+Docs: https://reactnativereusables.com/docs/installation/manual
+
+- `src/components/ui/` — componentes copiados de la CLI. Props y variantes no se modifican; se extienden con `className`.
+- `src/components/` — componentes propios de la app, reutilizables y con props explícitas (nada hardcodeado de una pantalla en particular).
+- Iconos con `lucide-react-native` a través del wrapper `<Icon as={...} className="..." size={...} />` de `src/components/ui/icon.tsx`.
+- Estilos con NativeWind (`className`). Los colores de la marca se declaran como CSS vars en `global.css` y se mapean en `tailwind.config.js`; su espejo en HSL para APIs que no aceptan clases está en `src/lib/theme.ts` (`THEME` / `NAV_THEME`).
+- Al agregar un componente que use overlays (dialog, popover, tooltip, dropdown), `PortalHost` en `src/app/_layout.tsx` es obligatorio.
+
 ## Rules
 
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.

@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Tokens de color de la marca (ver `tailwind.config.js` para su mapeo).
+ * Tomados del diseño de Stitch: "Tu Turismo - Página de Inicio (Móvil)".
+ * Formato HSL sin wrapping para poder usarlos en opacidades (bg-primary/90).
+ */
+@layer base {
+  :root {
+    /* Marca */
+    --brand-cyan: 194.9 100% 48.8%;
+    --brand-cyan-hover: 194.8 100% 39%;
+    --brand-purple: 267.3 72.3% 63.1%;
+    --brand-purple-hover: 272.3 53.4% 46.1%;
+    --brand-dark: 219.1 36.5% 12.4%;
+    --brand-footer: 220.7 37.8% 14.5%;
+
+    /* Escala slate del diseño */
+    --background: 210 40% 98%; /* #f8fafc */
+    --foreground: 217.2 32.6% 17.5%; /* #1e293b */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47.4% 11.2%; /* #0f172a */
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+    --primary: 194.9 100% 48.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 40% 96.1%; /* #f1f5f9 */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 47%; /* #64748b */
+    --accent: 214.3 31.8% 91.4%; /* #e2e8f0 */
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 343.7 77.6% 50.6%; /* #e11d48 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%; /* #e2e8f0 */
+    --input: 214.3 31.8% 91.4%;
+    --ring: 194.9 100% 48.8%;
+    --radius: 0.625rem;
+    --chart-1: 194.9 100% 48.8%;
+    --chart-2: 267.3 72.3% 63.1%;
+    --chart-3: 215.4 16.3% 47%;
+    --chart-4: 24.6 95% 53.1%;
+    --chart-5: 160.1 84.1% 39.4%;
+  }
+
+  .dark:root {
+    /* TODO: definir la paleta oscura de la marca cuando se soporte dark mode. */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+}
