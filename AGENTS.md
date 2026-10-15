@@ -50,7 +50,17 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 - `src/components/` — componentes propios de la app, reutilizables y con props explícitas (nada hardcodeado de una pantalla en particular).
 - Iconos con `lucide-react-native` a través del wrapper `<Icon as={...} className="..." size={...} />` de `src/components/ui/icon.tsx`.
 - Estilos con NativeWind (`className`). Los colores de la marca se declaran como CSS vars en `global.css` y se mapean en `tailwind.config.js`; su espejo en HSL para APIs que no aceptan clases está en `src/lib/theme.ts` (`THEME` / `NAV_THEME`).
+- `className` solo funciona en los componentes que NativeWind registra por interop: los de `react-native` (`View`, `Text`, `Image`, `Pressable`, `ScrollView`, `FlatList`…) y `SafeAreaView`. **En `expo-image` no aplica**: envuélvelo en un `View` con clases y pásale las dimensiones por `style={{ width: "100%", height: "100%" }}`.
 - Al agregar un componente que use overlays (dialog, popover, tooltip, dropdown), `PortalHost` en `src/app/_layout.tsx` es obligatorio.
+
+## Datos, estado y caché
+
+- `src/lib/api.ts` — `API_URL` (de `EXPO_PUBLIC_API_URL`, ver `.env.example`) y `apiFetch<T>()`, que desenvuelve el sobre `{ success, data }` del backend. Todo fetch pasa por ahí.
+- `src/services/<recurso>.ts` — un archivo por recurso del backend (`places.ts`, más adelante `events.ts`, `restaurants.ts`): tipos del dominio + funciones `fetchX(params)`. Los tipos reflejan lo que la API devuelve hoy; no inventes campos.
+- `QueryClientProvider` vive en `src/app/_layout.tsx`. Los datos se piden siempre con `useQuery` y una `queryKey` que incluya **todos** los filtros del store.
+- Estados obligatorios en cada lista: **carga** (skeletons, no spinners), **error** (mensaje + reintentar con `refetch`) y **vacío**.
+- `src/stores/` — estado global con Zustand (`usePlacesStore` con los filtros de lugares). Los datos del servidor **no** se guardan ahí, para eso está la caché de TanStack Query.
+- La API no tiene paginación ni CORS en algunos entornos: si haces scroll infinito, confirma que el backend soporte el parámetro antes de implementarlo.
 
 ## Rules
 

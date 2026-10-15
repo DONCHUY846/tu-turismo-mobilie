@@ -41,12 +41,16 @@ export function HeroBanner({
   return (
     <View className={cn("relative overflow-hidden bg-brand-dark", className)}>
       {/* TODO: sustituir la imagen hardcodeada por el asset final del hero. */}
-      <Image
-        source={image}
-        contentFit="cover"
-        className="absolute inset-0 h-full w-full"
-        accessibilityIgnoresInvertColors
-      />
+      {/* Nota: `expo-image` no tiene interop de NativeWind, así que el contenedor
+          usa clases (View sí lo tiene) y el tamaño de la imagen va por `style`. */}
+      <View className="absolute inset-0">
+        <Image
+          source={image}
+          contentFit="cover"
+          style={{ width: "100%", height: "100%" }}
+          accessibilityIgnoresInvertColors
+        />
+      </View>
       {/* Overlay para asegurar legibilidad del texto sobre cualquier foto */}
       <View className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
 

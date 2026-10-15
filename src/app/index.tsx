@@ -5,6 +5,7 @@ import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { CategoryCard, CategoryGrid } from "@/components/CategoryCard";
+import { FeaturedPlaces } from "@/components/FeaturedPlaces";
 import { HeroBanner } from "@/components/HeroBanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -27,7 +28,7 @@ import {
  *  2. HeroBanner         — portada con imagen, titular y dos CTAs.
  *  3. SectionHeader      — "Explora por Categoría".
  *  4. CategoryGrid       — 2 columnas con las 6 categorías de entrada.
- *  5. Lugares Destacados — TODO, sin datos todavía.
+ *  5. FeaturedPlaces     — "Lugares Destacados" desde la API (TanStack Query).
  *  6. Próximos Eventos   — TODO, sin datos todavía.
  *  7. Restaurantes Recomendados — TODO, sin datos todavía.
  *  8. OfflineBanner      — aviso de sin conexión (visible por ahora).
@@ -86,17 +87,9 @@ export default function Index() {
             </CategoryGrid>
           </View>
 
-          {/* 5. Lugares destacados.
-              TODO: sustituir el placeholder por la lista de tarjetas (PlaceCard)
-              con imagen, categoría, nombre, rating, descripción y dirección,
-              conectarlo al endpoint de lugares + link "Ver todos los lugares". */}
-          <View>
-            <SectionHeader
-              title="Lugares Destacados"
-              subtitle="Los mejores destinos seleccionados para ti"
-            />
-            <SectionPlaceholder hint="Lista de lugares destacados" />
-          </View>
+          {/* 5. Lugares destacados: listado real desde la API
+              (GET /api/v1/core/places/), con skeletons de carga y estado de error. */}
+          <FeaturedPlaces />
 
           {/* 6. Próximos eventos.
               TODO: sustituir el placeholder por la lista de tarjetas (EventCard)
