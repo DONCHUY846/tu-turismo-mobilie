@@ -61,6 +61,9 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 - Estados obligatorios en cada lista: **carga** (skeletons, no spinners), **error** (mensaje + reintentar con `refetch`) y **vacío**.
 - `src/stores/` — estado global con Zustand (`usePlacesStore` con los filtros de lugares). Los datos del servidor **no** se guardan ahí, para eso está la caché de TanStack Query.
 - La API no tiene paginación ni CORS en algunos entornos: si haces scroll infinito, confirma que el backend soporte el parámetro antes de implementarlo.
+- Estado de red: `expo-network` (viene en Expo Go). `src/hooks/useIsOnline.ts` para los avisos de "sin conexión" y `NetworkStateSync` en `_layout.tsx` para alimentar el `onlineManager` de TanStack Query. No hardcodear el banner offline.
+- Fechas: llegan como texto (`"2026-07-25"` o `"2026-09-03 00:00:00"`). Formatear siempre con `src/lib/format.ts`; no usar `new Date()` directo ni `Intl`, para no tener desfases de zona horaria.
+- Estados de lista reutilizables: `CardSkeleton` (carga), `SectionErrorState` (error + reintento) y el texto de vacío de cada sección.
 
 ## Rules
 

@@ -8,8 +8,9 @@ import { CategoryCard, CategoryGrid } from "@/components/CategoryCard";
 import { FeaturedPlaces } from "@/components/FeaturedPlaces";
 import { HeroBanner } from "@/components/HeroBanner";
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { RecommendedRestaurants } from "@/components/RecommendedRestaurants";
 import { SectionHeader } from "@/components/SectionHeader";
-import { SectionPlaceholder } from "@/components/SectionPlaceholder";
+import { UpcomingEvents } from "@/components/UpcomingEvents";
 import {
   BOTTOM_TABS,
   FOOTER_CONTACT,
@@ -28,12 +29,12 @@ import {
  *  2. HeroBanner         — portada con imagen, titular y dos CTAs.
  *  3. SectionHeader      — "Explora por Categoría".
  *  4. CategoryGrid       — 2 columnas con las 6 categorías de entrada.
- *  5. FeaturedPlaces     — "Lugares Destacados" desde la API (TanStack Query).
- *  6. Próximos Eventos   — TODO, sin datos todavía.
- *  7. Restaurantes Recomendados — TODO, sin datos todavía.
- *  8. OfflineBanner      — aviso de sin conexión (visible por ahora).
- *  9. AppFooter          — enlaces, contacto y copyright.
- * 10. BottomTabBar       — navegación inferior (fija abajo).
+ *  5. FeaturedPlaces         — "Lugares Destacados" desde la API.
+ *  6. UpcomingEvents          — "Próximos Eventos" desde la API.
+ *  7. RecommendedRestaurants  — "Restaurantes Recomendados" desde la API.
+ *  8. OfflineBanner           — aviso de sin conexión (fijo bajo el header).
+ *  9. AppFooter               — enlaces, contacto y copyright.
+ * 10. BottomTabBar            — navegación inferior (fija abajo).
  */
 export default function Index() {
   const scrollRef = React.useRef<ScrollView>(null);
@@ -45,6 +46,9 @@ export default function Index() {
         // TODO: abrir el menú lateral cuando exista.
         onPressMenu={() => {}}
       />
+
+      {/* 8. Aviso de falta de conexión: aparece y desaparece según el estado real de red. */}
+      <OfflineBanner />
 
       <ScrollView
         ref={scrollRef}
@@ -91,32 +95,14 @@ export default function Index() {
               (GET /api/v1/core/places/), con skeletons de carga y estado de error. */}
           <FeaturedPlaces />
 
-          {/* 6. Próximos eventos.
-              TODO: sustituir el placeholder por la lista de tarjetas (EventCard)
-              con imagen, nombre, fecha y ciudad + link "Ver todos los eventos". */}
-          <View>
-            <SectionHeader
-              title="Próximos Eventos"
-              subtitle="No te pierdas de las actividades locales"
-            />
-            <SectionPlaceholder hint="Lista de próximos eventos" />
-          </View>
+          {/* 6. Próximos eventos: listado real desde la API
+              (GET /api/v1/core/events/), ordenado por fecha en el cliente. */}
+          <UpcomingEvents />
 
-          {/* 7. Restaurantes recomendados.
-              TODO: sustituir el placeholder por la lista de tarjetas (RestaurantCard)
-              con imagen, nombre, tipo de cocina, dirección y horario
-              + link "Ver todos los restaurantes". */}
-          <View>
-            <SectionHeader
-              title="Restaurantes Recomendados"
-              subtitle="Prueba los sabores tradicionales de nuestra tierra"
-            />
-            <SectionPlaceholder hint="Lista de restaurantes recomendados" />
-          </View>
+          {/* 7. Restaurantes recomendados: listado real desde la API
+              (GET /api/v1/core/restaurants/). */}
+          <RecommendedRestaurants />
         </View>
-
-        {/* 8. Aviso de falta de conexión. */}
-        <OfflineBanner />
 
         {/* 9. Pie de página con enlaces, contacto y copyright. */}
         <AppFooter

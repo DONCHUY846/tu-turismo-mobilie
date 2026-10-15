@@ -1,16 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { RotateCw } from "lucide-react-native";
 import * as React from "react";
 import { View } from "react-native";
 
+import { CardSkeleton } from "@/components/CardSkeleton";
 import { PlaceCard } from "@/components/PlaceCard";
-import { PlaceCardSkeleton } from "@/components/PlaceCardSkeleton";
+import { SectionErrorState } from "@/components/SectionErrorState";
 import { SectionHeader } from "@/components/SectionHeader";
-import { Button } from "@/components/ui/button";
-import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
-import { fetchPlaces, type Place } from "@/services/places";
+import { fetchPlaces } from "@/services/places";
 import { selectPlacesFilters, usePlacesStore } from "@/stores/places-store";
 
 export type FeaturedPlacesProps = {
@@ -54,36 +52,22 @@ export function FeaturedPlaces({ limit = 4 }: FeaturedPlacesProps) {
       {isPending ? (
         <View className="gap-4">
           {Array.from({ length: limit }, (_, index) => (
-            <PlaceCardSkeleton key={index} />
+            <CardSkeleton key={index} />
           ))}
         </View>
       ) : null}
 
       {isError ? (
-        <View
-          className="items-center gap-3 rounded-2xl border border-border bg-card px-4 py-8"
-          accessibilityRole="alert"
-        >
-          <Text className="text-center text-sm font-semibold text-foreground">
-            No pudimos cargar los lugares
-          </Text>
-          <Text className="text-center text-xs text-muted-foreground">
-            {error?.message ?? "Revisa tu conexión e inténtalo de nuevo."}
-          </Text>
-          <Button
-            variant="outline"
-            onPress={() => void refetch()}
-            className="h-auto rounded-lg border-brand-cyan px-3.5 py-1.5 active:bg-brand-cyan/10"
-          >
-            <Icon as={RotateCw} className="text-brand-cyan" size={14} />
-            <Text className="text-xs font-medium text-brand-cyan">Reintentar</Text>
-          </Button>
-        </View>
+        <SectionErrorState
+          title="No pudimos cargar los lugares"
+          detail={error?.message ?? "Revisa tu conexión e inténtalo de nuevo."}
+          onRetry={() => void refetch()}
+        />
       ) : null}
 
       {places.length > 0 ? (
         <View className={cn("gap-4", isRefetching && "opacity-60")}>
-          {places.map((place: Place) => (
+          {places.map((place) => (
             <PlaceCard key={place.id} place={place} />
           ))}
         </View>

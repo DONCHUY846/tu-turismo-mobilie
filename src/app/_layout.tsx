@@ -1,8 +1,9 @@
 import "../../global.css";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { PortalHost } from "@rn-primitives/portal";
 import { Stack, ThemeProvider } from "expo-router";
+import * as Network from "expo-network";
 import * as React from "react";
 
 import { NAV_THEME } from "@/lib/theme";
@@ -26,6 +27,7 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={NAV_THEME}>
       <QueryClientProvider client={queryClient}>
+        <NetworkStateSync />
         <Stack
           screenOptions={{
             // Cada pantalla dibuja su propio header (AppHeader).
@@ -37,4 +39,19 @@ export default function RootLayout() {
       </QueryClientProvider>
     </ThemeProvider>
   );
+}
+
+/**
+ * Le avisa a TanStack Query cuándo hay o no red: sin conexión las consultas se
+ * pausan (`networkMode`) y al volver la red se refresca lo que esté vencido.
+ */
+function NetworkStateSync() {
+  React.useEffect(() => {
+    const subscription = Network.addNetworkStateListener(({ isConnected }) => {
+      onlineManager.setOnline(isConnected !== false);
+    });
+    return () => subscription.remove();
+  }, []);
+
+  return null;
 }
