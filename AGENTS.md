@@ -26,6 +26,8 @@ Run lint and typecheck before declaring any task done.
 ## Navigation & Routing
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
+- Estructura actual: `src/app/(tabs)/` (Inicio, Explorar, Perfil) con la barra inferior propia vía `tabBar` en `(tabs)/_layout.tsx`; `login.tsx` vive en el Stack raíz para que no herede las pestañas. El grupo `(tabs)` no aparece en la URL: `(tabs)/index.tsx` sigue siendo `/`.
+- La barra de navegación usa **JS tabs** (`expo-router/tabs`) y no native tabs, para conservar los íconos de lucide y los colores de marca. `AppTabBar` (`src/components/navigation/`) adapta las rutas del navegador a `BottomTabBar`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
 
@@ -64,6 +66,16 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 - Estado de red: `expo-network` (viene en Expo Go). `src/hooks/useIsOnline.ts` para los avisos de "sin conexión" y `NetworkStateSync` en `_layout.tsx` para alimentar el `onlineManager` de TanStack Query. No hardcodear el banner offline.
 - Fechas: llegan como texto (`"2026-07-25"` o `"2026-09-03 00:00:00"`). Formatear siempre con `src/lib/format.ts`; no usar `new Date()` directo ni `Intl`, para no tener desfases de zona horaria.
 - Estados de lista reutilizables: `CardSkeleton` (carga), `SectionErrorState` (error + reintento) y el texto de vacío de cada sección.
+
+## Autenticación
+
+- `src/services/auth.ts` — `login`, `refreshSession` y `fetchProfile`. Estos endpoints responden **JSON plano** (sin sobre `{success,data}`), por eso usan `apiRequest` y no `apiFetch`.
+- `src/stores/auth-store.ts` — Zustand + `persist` sobre un adaptador de `expo-secure-store`. Estado: `status: "loading" | "authenticated" | "guest"`, `accessToken`, `refreshToken`, `expiresAt`, `user`. Se persiste solo la sesión, nunca `status`.
+- El splash se oculta en `src/app/_layout.tsx` cuando `status !== "loading"` y las fuentes están cargadas: evita el parpadeo del login.
+- Rutas: `src/app/_layout.tsx` declara `unstable_settings.anchor = "(tabs)"` y protege con `<Stack.Protected guard={...}>`. Hoy solo el login está protegido; cuando existan rutas privadas, agrúpalas en `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}`.
+- El acceso al login es **solo desde `src/app/(tabs)/perfil.tsx`**: invitado → `ProfileGuestCard` con botón a `/login`; con sesión → datos de `auth/me/` y botón de cerrar sesión (`signOut()` + `router.replace("/login")`, porque no hay endpoint de logout).
+- Después de `signIn()` hay que navegar con `router.replace("/")`, nunca `push` (para no dejar el login en el historial).
+- TODO global: no hay endpoint de logout (el token expira solo) ni de recuperación de contraseña.
 
 ## Rules
 

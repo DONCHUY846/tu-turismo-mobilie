@@ -18,18 +18,20 @@ export type BottomTabBarProps = {
   /** href de la pestaña activa; la de marca es `text-brand-cyan` */
   activeHref?: string;
   onPressTab?: (tab: BottomTabItem) => void;
+  /** inset inferior; si no se pasa se toma del safe area del contexto */
+  bottomInset?: number;
   className?: string;
 };
 
 /**
- * Barra de navegación inferior fija.
- * TODO: migrar a un layout `(tabs)` de Expo Router y reemplazar este componente
- * por `Tabs`/`Tabs.Screen`, conservando solo los íconos y etiquetas.
+ * Barra de navegación inferior (presentacional): recibe las pestañas ya resueltas.
+ * Quien la monta es `AppTabBar`, el adaptador del `tabBar` de Expo Router.
  */
 export function BottomTabBar({
   tabs,
   activeHref,
   onPressTab,
+  bottomInset,
   className,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
@@ -41,7 +43,7 @@ export function BottomTabBar({
         "shadow-lg shadow-black/10",
         className
       )}
-      style={{ paddingBottom: insets.bottom + 8 }}
+      style={{ paddingBottom: (bottomInset ?? insets.bottom) + 8 }}
     >
       {tabs.map((tab) => {
         const isActive = tab.href === activeHref;

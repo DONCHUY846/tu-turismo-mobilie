@@ -3,7 +3,6 @@ import { ScrollView, View } from "react-native";
 
 import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
-import { BottomTabBar } from "@/components/BottomTabBar";
 import { CategoryCard, CategoryGrid } from "@/components/CategoryCard";
 import { FeaturedPlaces } from "@/components/FeaturedPlaces";
 import { HeroBanner } from "@/components/HeroBanner";
@@ -12,7 +11,6 @@ import { RecommendedRestaurants } from "@/components/RecommendedRestaurants";
 import { SectionHeader } from "@/components/SectionHeader";
 import { UpcomingEvents } from "@/components/UpcomingEvents";
 import {
-  BOTTOM_TABS,
   FOOTER_CONTACT,
   FOOTER_INFO_LINKS,
   FOOTER_QUICK_LINKS,
@@ -25,16 +23,17 @@ import {
  *
  * Bloques, en el mismo orden que el diseño de Stitch
  * ("Tu Turismo - Página de Inicio (Móvil)"):
- *  1. AppHeader          — logotipo de marca + botón de menú (fijo arriba).
- *  2. HeroBanner         — portada con imagen, titular y dos CTAs.
- *  3. SectionHeader      — "Explora por Categoría".
- *  4. CategoryGrid       — 2 columnas con las 6 categorías de entrada.
- *  5. FeaturedPlaces         — "Lugares Destacados" desde la API.
- *  6. UpcomingEvents          — "Próximos Eventos" desde la API.
- *  7. RecommendedRestaurants  — "Restaurantes Recomendados" desde la API.
- *  8. OfflineBanner           — aviso de sin conexión (fijo bajo el header).
- *  9. AppFooter               — enlaces, contacto y copyright.
- * 10. BottomTabBar            — navegación inferior (fija abajo).
+ *  1. AppHeader              — logotipo de marca + botón de menú (fijo arriba).
+ *  2. OfflineBanner          — aviso de sin conexión (fijo bajo el header).
+ *  3. HeroBanner             — portada con imagen, titular y dos CTAs.
+ *  4. SectionHeader          — "Explora por Categoría".
+ *  5. CategoryGrid           — 2 columnas con las 6 categorías de entrada.
+ *  6. FeaturedPlaces         — "Lugares Destacados" desde la API.
+ *  7. UpcomingEvents         — "Próximos Eventos" desde la API.
+ *  8. RecommendedRestaurants — "Restaurantes Recomendados" desde la API.
+ *  9. AppFooter              — enlaces, contacto y copyright.
+ *
+ * La barra de navegación inferior la dibuja el layout `(tabs)/_layout.tsx`.
  */
 export default function Index() {
   const scrollRef = React.useRef<ScrollView>(null);
@@ -47,7 +46,7 @@ export default function Index() {
         onPressMenu={() => {}}
       />
 
-      {/* 8. Aviso de falta de conexión: aparece y desaparece según el estado real de red. */}
+      {/* 2. Aviso de falta de conexión: aparece y desaparece según el estado real de red. */}
       <OfflineBanner />
 
       <ScrollView
@@ -55,7 +54,7 @@ export default function Index() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
       >
-        {/* 2. Portada: imagen a sangre con overlay y los llamados a la acción. */}
+        {/* 3. Portada: imagen a sangre con overlay y los llamados a la acción. */}
         <HeroBanner
           image={HERO.image}
           title={HERO.title}
@@ -70,7 +69,7 @@ export default function Index() {
         />
 
         <View className="mt-8 gap-y-12 px-4 pb-8">
-          {/* 3 + 4. Categorías: acceso rápido a cada tipo de contenido. */}
+          {/* 4 + 5. Categorías: acceso rápido a cada tipo de contenido. */}
           <View>
             <SectionHeader
               align="center"
@@ -91,15 +90,15 @@ export default function Index() {
             </CategoryGrid>
           </View>
 
-          {/* 5. Lugares destacados: listado real desde la API
+          {/* 6. Lugares destacados: listado real desde la API
               (GET /api/v1/core/places/), con skeletons de carga y estado de error. */}
           <FeaturedPlaces />
 
-          {/* 6. Próximos eventos: listado real desde la API
+          {/* 7. Próximos eventos: listado real desde la API
               (GET /api/v1/core/events/), ordenado por fecha en el cliente. */}
           <UpcomingEvents />
 
-          {/* 7. Restaurantes recomendados: listado real desde la API
+          {/* 8. Restaurantes recomendados: listado real desde la API
               (GET /api/v1/core/restaurants/). */}
           <RecommendedRestaurants />
         </View>
@@ -114,15 +113,6 @@ export default function Index() {
           onScrollToTop={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
         />
       </ScrollView>
-
-      {/* 10. Barra de navegación inferior fija.
-          TODO: migrar a un layout (tabs) de Expo Router. */}
-      <BottomTabBar
-        tabs={BOTTOM_TABS}
-        activeHref="/"
-        // TODO: navegar con router.push(tab.href) cuando existan las rutas.
-        onPressTab={() => {}}
-      />
     </View>
   );
 }
