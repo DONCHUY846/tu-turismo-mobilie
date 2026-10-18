@@ -47,3 +47,24 @@ export const NAV_THEME: Theme = {
     text: THEME.light.foreground,
   },
 };
+
+/**
+ * Paleta de degradados de la marca, con los colores ya resueltos a hex.
+ *
+ * NativeWind ignora `bg-gradient-*` / `from-*` / `to-*` en iOS y Android
+ * (`background-image` no es una propiedad soportada por
+ * `react-native-css-interop`), por eso los degradados usan `expo-linear-gradient`
+ * a través de `BrandGradient` y necesitan strings completos, no clases.
+ */
+export const GRADIENTS = {
+  /** cian oscuro -> morado, diagonal: banners y avatares */
+  brand: ["#0096c7", "#9b5de5"],
+  /** cian -> morado, horizontal: bloque de ilustración */
+  brandSoft: ["#0096c7", "#00bbf9", "#9b5de5"],
+  /** cian -> sky, diagonal: avatares */
+  cyanToSky: ["#0096c7", "#38bdf8"],
+  /** morado -> índigo, horizontal: botón primario del hero */
+  purpleToIndigo: ["#9b5de5", "#3e41ee"],
+  /** velo negro, vertical: overlay de legibilidad sobre fotos */
+  scrim: ["rgba(0, 0, 0, 0.6)", "rgba(0, 0, 0, 0.4)", "rgba(0, 0, 0, 0.8)"],
+} as const satisfies Record<string, readonly [string, string, ...string[]]>;

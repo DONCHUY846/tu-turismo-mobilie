@@ -2,9 +2,11 @@ import { Sparkles } from "lucide-react-native";
 import * as React from "react";
 import { View } from "react-native";
 
+import { BrandGradient } from "@/components/BrandGradient";
 import { JaliscoIllustration } from "@/components/auth/JaliscoIllustration";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { GRADIENTS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export type LoginArtworkProps = {
@@ -23,10 +25,11 @@ export function LoginArtwork({
   className,
 }: LoginArtworkProps) {
   return (
-    <View
+    <BrandGradient
+      colors={GRADIENTS.brandSoft}
+      direction="horizontal"
       className={cn(
-        "relative h-32 w-full overflow-hidden rounded-2xl border border-brand-cyan/20",
-        "bg-gradient-to-r from-brand-cyanHover via-brand-cyan to-brand-purple",
+        "relative h-32 w-full rounded-2xl border border-brand-cyan/20",
         className
       )}
     >
@@ -42,6 +45,6 @@ export function LoginArtwork({
           <Text className="text-[10px] font-bold uppercase text-white">{cityLabel}</Text>
         </View>
       </View>
-    </View>
+    </BrandGradient>
   );
 }

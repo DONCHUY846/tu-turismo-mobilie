@@ -2,9 +2,11 @@ import { LogIn } from "lucide-react-native";
 import * as React from "react";
 import { View } from "react-native";
 
+import { BrandGradient } from "@/components/BrandGradient";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { GRADIENTS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export type ProfileGuestCardProps = {
@@ -33,9 +35,13 @@ export function ProfileGuestCard({
   return (
     <View className={cn("gap-4", className)}>
       <View className="items-center gap-3 rounded-2xl border border-border bg-card px-6 py-6">
-        <View className="h-20 w-20 items-center justify-center rounded-full border-[3px] border-brand-cyan bg-gradient-to-tr from-brand-cyanHover to-sky-400">
+        <BrandGradient
+          colors={GRADIENTS.cyanToSky}
+          direction="diagonal"
+          className="h-20 w-20 items-center justify-center rounded-full border-[3px] border-brand-cyan"
+        >
           <Icon as={LogIn} className="text-white" size={30} />
-        </View>
+        </BrandGradient>
 
         <View className="h-1.5 w-9 rounded-full bg-brand-cyan" />
 

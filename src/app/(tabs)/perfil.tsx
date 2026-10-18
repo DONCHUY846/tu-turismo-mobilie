@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { CalendarDays, Star } from "lucide-react-native";
 import * as React from "react";
 import { ScrollView, View } from "react-native";
@@ -14,6 +14,7 @@ import {
   SavedListSection,
 } from "@/components/profile/SavedListSection";
 import { fetchProfile } from "@/services/auth";
+import { sendRecommendations } from "@/services/recommendations";
 import { useAuthStore } from "@/stores/auth-store";
 
 /** TODO: sustituir por la ubicación real del usuario cuando exista. */
@@ -26,7 +27,7 @@ const USER_LOCATION = "Guadalajara, Jalisco • México";
  *  1. AppHeader                — cabecera estándar de la app.
  *  2. ProfileActions           — ajustes y cerrar sesión.
  *  3. ProfileCard              — avatar, nombre, correo, teléfono y ubicación.
- *  4. AIRecommendationBanner   — promo del motor de itinerarios.
+ *  4. AIRecommendationBanner   — promo del motor de recomendaciones IA.
  *  5. SavedListSection         — Lugares Favoritos.
  *  6. SavedListSection         — Eventos Guardados.
  *
@@ -53,6 +54,12 @@ export default function Perfil() {
     signOut();
     router.replace("/login");
   };
+
+  // Recomendaciones de IA: es una acción del usuario (POST), no una carga de
+  // pantalla, así que va como mutación y no como query.
+  const recommendations = useMutation({
+    mutationFn: () => sendRecommendations(accessToken ?? ""),
+  });
 
   const fullName = [profile?.nombre ?? storeUser.nombre, profile?.apellido]
     .filter(Boolean)
@@ -84,8 +91,14 @@ export default function Perfil() {
               <AIRecommendationBanner
                 title="¿Listo para tu próximo itinerario turístico en Jalisco?"
                 description="Nuestro motor de IA analiza tus lugares favoritos y eventos para recomendarte experiencias gastronómicas y culturales a tu medida."
-                // TODO: navegar al generador de itinerarios cuando exista.
-                onPressAction={() => {}}
+                recommendations={recommendations.data?.data}
+                successMessage={recommendations.data?.message}
+                isLoading={recommendations.isPending}
+                errorMessage={
+                  recommendations.isError ? recommendations.error.message : null
+                }
+                onPressAction={() => recommendations.mutate()}
+                onRetry={() => recommendations.mutate()}
               />
 
               {/* TODO: conectar con el store de favoritos cuando exista. */}

@@ -2,8 +2,10 @@ import { Mail, MapPin, Phone, Star } from "lucide-react-native";
 import * as React from "react";
 import { View } from "react-native";
 
+import { BrandGradient } from "@/components/BrandGradient";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { GRADIENTS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export type ProfileCardProps = {
@@ -39,11 +41,15 @@ export function ProfileCard({
       {/* Avatar con iniciales y broche de verificación */}
       <View className="mb-3">
         <View className="rounded-full bg-card p-1 shadow-lg">
-          <View className="h-28 w-28 items-center justify-center rounded-full border-[3px] border-brand-cyan bg-gradient-to-tr from-brand-cyanHover via-brand-cyan to-sky-400">
+          <BrandGradient
+            colors={GRADIENTS.brandSoft}
+            direction="diagonal"
+            className="h-28 w-28 items-center justify-center rounded-full border-[3px] border-brand-cyan"
+          >
             <Text className="select-none text-3xl font-bold tracking-wide text-white">
               {getInitials(name)}
             </Text>
-          </View>
+          </BrandGradient>
         </View>
 
         {verified ? (

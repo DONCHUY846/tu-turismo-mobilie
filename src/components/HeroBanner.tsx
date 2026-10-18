@@ -2,8 +2,10 @@ import { Image, type ImageSource } from "expo-image";
 import * as React from "react";
 import { View } from "react-native";
 
+import { BrandGradient } from "@/components/BrandGradient";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/text";
+import { GRADIENTS } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 export type HeroBannerProps = {
@@ -52,7 +54,12 @@ export function HeroBanner({
         />
       </View>
       {/* Overlay para asegurar legibilidad del texto sobre cualquier foto */}
-      <View className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/80" />
+      <BrandGradient
+        colors={GRADIENTS.scrim}
+        direction="vertical"
+        locations={[0, 0.5, 1]}
+        className="absolute inset-0"
+      />
 
       <View className="relative z-10 items-center px-6 pb-16 pt-16">
         <Text className="mb-4 text-center text-3xl font-extrabold leading-tight tracking-tight text-white">
@@ -79,14 +86,20 @@ export function HeroBanner({
           ) : null}
 
           {secondaryLabel ? (
-            <Button
-              onPress={onSecondaryPress}
-              className="h-auto w-full rounded-full bg-gradient-to-r from-brand-purple to-indigo-500 py-3.5 shadow-lg shadow-brand-purple/20 active:opacity-90"
+            <BrandGradient
+              colors={GRADIENTS.purpleToIndigo}
+              direction="horizontal"
+              className="w-full rounded-full shadow-lg shadow-brand-purple/20"
             >
-              <Text className="text-sm font-semibold tracking-wide text-white">
-                {secondaryLabel}
-              </Text>
-            </Button>
+              <Button
+                onPress={onSecondaryPress}
+                className="h-auto w-full rounded-full bg-transparent py-3.5 active:opacity-90"
+              >
+                <Text className="text-sm font-semibold tracking-wide text-white">
+                  {secondaryLabel}
+                </Text>
+              </Button>
+            </BrandGradient>
           ) : null}
         </View>
       </View>
