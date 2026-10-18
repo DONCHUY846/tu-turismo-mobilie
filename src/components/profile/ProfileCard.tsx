@@ -32,12 +32,12 @@ export function ProfileCard({
   return (
     <View
       className={cn(
-        "-mt-20 items-center gap-2 rounded-[32px] border border-border bg-card px-6 pb-7 shadow-xl shadow-slate-200/60",
+        "items-center gap-2 rounded-2xl border border-border bg-card px-4 py-5 shadow-sm shadow-black/5",
         className
       )}
     >
       {/* Avatar con iniciales y broche de verificación */}
-      <View className="-mt-16 mb-2">
+      <View className="mb-3">
         <View className="rounded-full bg-card p-1 shadow-lg">
           <View className="h-28 w-28 items-center justify-center rounded-full border-[3px] border-brand-cyan bg-gradient-to-tr from-brand-cyanHover via-brand-cyan to-sky-400">
             <Text className="select-none text-3xl font-bold tracking-wide text-white">

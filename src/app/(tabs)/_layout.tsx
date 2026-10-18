@@ -9,7 +9,14 @@ import { AppTabBar } from "@/components/navigation/AppTabBar";
  */
 export default function TabsLayout() {
   return (
-    <Tabs tabBar={(props) => <AppTabBar {...props} />}>
+    <Tabs
+      screenOptions={{
+        // Las pantallas dibujan su propio header (AppHeader); el header de las
+        // tabs solo mostraría el nombre de la pestaña activa.
+        headerShown: false,
+      }}
+      tabBar={(props) => <AppTabBar {...props} />}
+    >
       <Tabs.Screen name="index" options={{ title: "Inicio" }} />
       <Tabs.Screen name="explorar" options={{ title: "Explorar" }} />
       <Tabs.Screen name="perfil" options={{ title: "Perfil" }} />

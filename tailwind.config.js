@@ -10,9 +10,6 @@ module.exports = {
       // replicar la tipografía del diseño. Por ahora se usa la fuente del sistema.
       fontFamily: {
         sans: ["Inter", "System", "sans-serif"],
-        // Serif editorial de la pantalla de login (variante "Editorial").
-        serif: ["PlayfairDisplay_700Bold", "Georgia", "serif"],
-        "serif-italic": ["PlayfairDisplay_700Bold_Italic", "Georgia", "serif"],
       },
       // Radios Derivados de --radius, como en shadcn/ui.
       borderRadius: {
@@ -74,11 +71,6 @@ module.exports = {
           terracotta: "hsl(var(--brand-terracotta))",
           amber: "hsl(var(--brand-amber))",
           sand: "hsl(var(--brand-sand))",
-        },
-        editorial: {
-          night: "hsl(var(--editorial-night))",
-          deep: "hsl(var(--editorial-deep))",
-          mid: "hsl(var(--editorial-mid))",
         },
       },
     },

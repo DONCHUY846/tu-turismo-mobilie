@@ -16,15 +16,11 @@
     --brand-purple-hover: 272.3 53.4% 46.1%;
     --brand-dark: 219.1 36.5% 12.4%;
     --brand-footer: 220.7 37.8% 14.5%;
-    /* Acentos de la variante editorial (pantalla de login). */
+    /* Acentos usados por el login y la pantalla de perfil. */
     --brand-navy: 222.2 47.4% 11.2%; /* #0f172a */
     --brand-terracotta: 16 66.4% 55.7%; /* #d96b43 */
     --brand-amber: 37.7 92.1% 50.2%; /* #f59e0b */
     --brand-sand: 120 11.1% 98.2%; /* #fafbfa */
-    /* Degradado del hero de login. */
-    --editorial-night: 200 60% 7.8%; /* #081820 */
-    --editorial-deep: 196.7 62.3% 13.5%; /* #0d2c38 */
-    --editorial-mid: 197 61.2% 19.2%; /* #133e4f */
 
     /* Escala slate del diseño */
     --background: 210 40% 98%; /* #f8fafc */

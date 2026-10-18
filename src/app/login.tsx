@@ -1,12 +1,14 @@
 import { useMutation } from "@tanstack/react-query";
+import { ChevronLeft } from "lucide-react-native";
 import * as React from "react";
-import { KeyboardAvoidingView, Platform, ScrollView } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { LoginArtwork } from "@/components/auth/LoginArtwork";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { LoginHero } from "@/components/auth/LoginHero";
 import { LoginSheet } from "@/components/auth/LoginSheet";
+import { Icon } from "@/components/ui/icon";
 import { ApiError } from "@/lib/api";
 import { login } from "@/services/auth";
 import { useAuthStore } from "@/stores/auth-store";
@@ -14,11 +16,13 @@ import { useAuthStore } from "@/stores/auth-store";
 /**
  * Pantalla de acceso de Tu Turismo (`/login`).
  *
- * Bloques (diseño de Stitch "Tu Turismo - Login (Variante Editorial)"):
- *  1. LoginHero    — cabecera editorial con la ilustración de Jalisco.
- *  2. LoginSheet   — hoja blanca elevada con el título del formulario.
- *  3. LoginForm    — correo, contraseña y los botones de acceso/registro.
+ * Bloques:
+ *  1. Botón de regreso — vuelve a donde se entrée (Perfil).
+ *  2. LoginArtwork  — ilustración de heritage de Jalisco.
+ *  3. LoginSheet    — tarjeta con el título y `LoginForm`.
  *
+ * El teclado se resuelve con `KeyboardAvoidingView` en iOS y con el
+ * `softwareKeyboardLayoutMode: "resize"` de `app.json` en Android.
  * Está protegida por `Stack.Protected` en `_layout.tsx`: si ya hay sesión, el
  * router nunca deja llegar aquí.
  */
@@ -52,29 +56,36 @@ export default function Login() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-editorial-night"
+      className="flex-1 bg-background"
     >
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        contentContainerStyle={{
+          paddingTop: insets.top + 12,
+          paddingBottom: insets.bottom + 24,
+        }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <LoginHero
-          title="Tu próxima aventura"
-          highlight="comienza aquí"
-          subtitle="Explora la magia cultural, el tequila de origen, la arquitectura histórica y la calidez tapatía."
-        />
-
-        <LoginSheet
-          eyebrow="Acceso a viajeros"
-          title="Iniciar sesión"
-          subtitle="Continúa planificando tus rutas y experiencias en México."
+        {/* 1. Regreso */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
+          onPress={() => router.back()}
+          className="mb-3 h-9 w-9 items-center justify-center rounded-xl border border-border bg-card active:opacity-70"
         >
+          <Icon as={ChevronLeft} className="text-slate-600" size={20} />
+        </Pressable>
+
+        {/* 2. Ilustración */}
+        <LoginArtwork />
+
+        {/* 3. Formulario */}
+        <LoginSheet className="mt-4" title="Iniciar sesión">
           <LoginForm
             email={email}
-            password={password}
             onChangeEmail={setEmail}
+            password={password}
             onChangePassword={setPassword}
             onSubmit={handleSubmit}
             isPending={loginMutation.isPending}

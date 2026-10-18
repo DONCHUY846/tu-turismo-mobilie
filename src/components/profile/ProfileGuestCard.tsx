@@ -2,10 +2,10 @@ import { LogIn } from "lucide-react-native";
 import * as React from "react";
 import { View } from "react-native";
 
-import { BrandMark } from "@/components/auth/BrandMark";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Text } from "@/components/ui/text";
+import { cn } from "@/lib/utils";
 
 export type ProfileGuestCardProps = {
   title?: string;
@@ -14,6 +14,7 @@ export type ProfileGuestCardProps = {
   onPressSignIn: () => void;
   /** contenido opcional debajo del botón (ej. "Crear cuenta" en TODO) */
   children?: React.ReactNode;
+  className?: string;
 };
 
 /**
@@ -27,26 +28,23 @@ export function ProfileGuestCard({
   actionLabel = "Iniciar sesión",
   onPressSignIn,
   children,
+  className,
 }: ProfileGuestCardProps) {
   return (
-    <View className="gap-5">
-      <View className="-mt-20 items-center gap-3 rounded-[32px] border border-border bg-card px-6 pb-7 shadow-xl shadow-slate-200/60">
-        <View className="-mt-16 mb-1">
-          <View className="rounded-full bg-card p-1 shadow-lg">
-            <View className="h-24 w-24 items-center justify-center rounded-full border-[3px] border-brand-cyan bg-gradient-to-tr from-brand-cyanHover to-sky-400">
-              <Icon as={LogIn} className="text-white" size={32} />
-            </View>
-          </View>
+    <View className={cn("gap-4", className)}>
+      <View className="items-center gap-3 rounded-2xl border border-border bg-card px-6 py-6">
+        <View className="h-20 w-20 items-center justify-center rounded-full border-[3px] border-brand-cyan bg-gradient-to-tr from-brand-cyanHover to-sky-400">
+          <Icon as={LogIn} className="text-white" size={30} />
         </View>
 
-        <BrandMark className="[&_p]:text-center" />
+        <View className="h-1.5 w-9 rounded-full bg-brand-cyan" />
 
-        <View className="mb-1 h-1.5 w-9 rounded-full bg-brand-cyan" />
-
-        <Text className="text-center text-2xl font-extrabold tracking-tight text-slate-900">
+        <Text className="text-center text-xl font-bold tracking-tight text-slate-900">
           {title}
         </Text>
-        <Text className="text-center text-sm leading-relaxed text-slate-500">{description}</Text>
+        <Text className="text-center text-sm leading-relaxed text-slate-500">
+          {description}
+        </Text>
       </View>
 
       <Button

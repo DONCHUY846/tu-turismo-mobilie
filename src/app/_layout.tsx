@@ -1,10 +1,5 @@
 import "../../global.css";
 
-import {
-  PlayfairDisplay_700Bold,
-  PlayfairDisplay_700Bold_Italic,
-  useFonts,
-} from "@expo-google-fonts/playfair-display";
 import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { PortalHost } from "@rn-primitives/portal";
 import { Stack, ThemeProvider } from "expo-router";
@@ -74,20 +69,15 @@ function AppGate() {
 }
 
 /**
- * Mantiene el splash visible hasta que las fuentes estén cargadas y la sesión
- * se haya rehidratado de SecureStore (store de auth en estado "loading").
+ * Mantiene el splash visible hasta que la sesión se haya rehidratado de
+ * SecureStore (store de auth en estado "loading").
  */
 function SplashController() {
   const status = useAuthStore((state) => state.status);
-  const [fontsLoaded, fontError] = useFonts({
-    PlayfairDisplay_700Bold,
-    PlayfairDisplay_700Bold_Italic,
-  });
 
   React.useEffect(() => {
-    const ready = (fontsLoaded || Boolean(fontError)) && status !== "loading";
-    if (ready) void SplashScreen.hideAsync();
-  }, [fontsLoaded, fontError, status]);
+    if (status !== "loading") void SplashScreen.hideAsync();
+  }, [status]);
 
   return null;
 }

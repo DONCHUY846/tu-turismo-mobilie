@@ -4,10 +4,11 @@ import * as React from "react";
 import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
 
+import { AppHeader } from "@/components/AppHeader";
 import { AIRecommendationBanner } from "@/components/profile/AIRecommendationBanner";
+import { ProfileActions } from "@/components/profile/ProfileActions";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import { ProfileGuestCard } from "@/components/profile/ProfileGuestCard";
-import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import {
   SavedListEmptyState,
   SavedListSection,
@@ -22,11 +23,12 @@ const USER_LOCATION = "Guadalajara, Jalisco • México";
  * Pantalla "Perfil" (pestaña 3). Es el único punto de entrada al login.
  *
  * Bloques (diseño de Stitch "Tu Turismo - Perfil de Usuario (Móvil)"):
- *  1. ProfileHeader            — degradado con ajustes y cerrar sesión.
- *  2. ProfileCard              — avatar, nombre, correo, teléfono y ubicación.
- *  3. AIRecommendationBanner   — promo del motor de itinerarios.
- *  4. SavedListSection         — Lugares Favoritos.
- *  5. SavedListSection         — Eventos Guardados.
+ *  1. AppHeader                — cabecera estándar de la app.
+ *  2. ProfileActions           — ajustes y cerrar sesión.
+ *  3. ProfileCard              — avatar, nombre, correo, teléfono y ubicación.
+ *  4. AIRecommendationBanner   — promo del motor de itinerarios.
+ *  5. SavedListSection         — Lugares Favoritos.
+ *  6. SavedListSection         — Eventos Guardados.
  *
  * Sin sesión se muestra `ProfileGuestCard` con el acceso al login, que no está
  * en el diseño original.
@@ -58,17 +60,15 @@ export default function Perfil() {
     .trim();
 
   return (
-    <View className="flex-1 bg-[#eef2f6]">
+    <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       >
-        <ProfileHeader
-          // TODO: pantalla de configuración cuando exista.
-          onPressSettings={() => {}}
-          onSignOut={isAuthenticated ? handleSignOut : undefined}
-        />
+        <AppHeader />
+
+        {isAuthenticated ? <ProfileActions onSignOut={handleSignOut} /> : null}
 
         <View className="gap-5 px-4">
           {isAuthenticated ? (
