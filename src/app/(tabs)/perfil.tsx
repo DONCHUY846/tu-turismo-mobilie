@@ -1,18 +1,19 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CalendarDays, Star } from "lucide-react-native";
+import { CalendarDays, Star, UtensilsCrossed } from "lucide-react-native";
 import * as React from "react";
 import { ScrollView, View } from "react-native";
 import { router } from "expo-router";
 
 import { AppHeader } from "@/components/AppHeader";
 import { AIRecommendationBanner } from "@/components/profile/AIRecommendationBanner";
+import { FavoriteRow } from "@/components/profile/FavoriteRow";
 import { ProfileActions } from "@/components/profile/ProfileActions";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import { ProfileGuestCard } from "@/components/profile/ProfileGuestCard";
-import {
-  SavedListEmptyState,
-  SavedListSection,
-} from "@/components/profile/SavedListSection";
+import { SavedFavoritesSection } from "@/components/profile/SavedFavoritesSection";
+import { SavedListEmptyState } from "@/components/profile/SavedListSection";
+import { useFavorites } from "@/hooks/useFavorites";
+import { formatDateRange } from "@/lib/format";
 import { fetchProfile } from "@/services/auth";
 import { sendRecommendations } from "@/services/recommendations";
 import { useAuthStore } from "@/stores/auth-store";
@@ -28,11 +29,13 @@ const USER_LOCATION = "Guadalajara, Jalisco • México";
  *  2. ProfileActions           — ajustes y cerrar sesión.
  *  3. ProfileCard              — avatar, nombre, correo, teléfono y ubicación.
  *  4. AIRecommendationBanner   — promo del motor de recomendaciones IA.
- *  5. SavedListSection         — Lugares Favoritos.
- *  6. SavedListSection         — Eventos Guardados.
+ *  5. SavedFavoritesSection    — Lugares Favoritos.
+ *  6. SavedFavoritesSection    — Eventos Guardados.
+ *  7. SavedFavoritesSection    — Restaurantes Favoritos (no está en el diseño).
  *
- * Sin sesión se muestra `ProfileGuestCard` con el acceso al login, que no está
- * en el diseño original.
+ * Los favoritos salen de `/core/favorites/`, que solo guarda la referencia, así
+ * que `useFavorites` trae el detalle de cada una. Sin sesión se muestra
+ * `ProfileGuestCard` con el acceso al login, que no está en el diseño original.
  */
 export default function Perfil() {
   const status = useAuthStore((state) => state.status);
@@ -54,6 +57,12 @@ export default function Perfil() {
     signOut();
     router.replace("/login");
   };
+
+  const favorites = useFavorites({
+    accessToken,
+    userId: storeUser.id,
+    enabled: isAuthenticated,
+  });
 
   // Recomendaciones de IA: es una acción del usuario (POST), no una carga de
   // pantalla, así que va como mutación y no como query.
@@ -101,13 +110,17 @@ export default function Perfil() {
                 onRetry={() => recommendations.mutate()}
               />
 
-              {/* TODO: conectar con el store de favoritos cuando exista. */}
-              <SavedListSection
+              <SavedFavoritesSection
                 icon={Star}
                 iconClassName="bg-amber-50 text-amber-500"
                 title="Lugares Favoritos"
                 subtitle="Atractivos y museos guardados en tu lista"
-                count={0}
+                count={favorites.places.length}
+                countLabels={["lugar", "lugares"]}
+                isPending={favorites.isPending}
+                isError={favorites.isError}
+                error={favorites.error}
+                onRetry={favorites.refetch}
                 emptyState={
                   <SavedListEmptyState
                     icon={Star}
@@ -115,16 +128,29 @@ export default function Perfil() {
                     description="Guárdalos desde cualquier lugar y aparecerán aquí para planear tu próxima ruta."
                   />
                 }
-              />
+              >
+                {favorites.places.map((place) => (
+                  <FavoriteRow
+                    key={place.id}
+                    title={place.nombre}
+                    subtitle={place.municipio || place.direccion}
+                    imageUrl={place.imagen_url}
+                    value={place.rating_promedio ?? place.calificacion}
+                  />
+                ))}
+              </SavedFavoritesSection>
 
-              {/* TODO: conectar con el store de eventos guardados cuando exista. */}
-              <SavedListSection
+              <SavedFavoritesSection
                 icon={CalendarDays}
                 iconClassName="bg-cyan-50 text-cyan-600"
                 title="Eventos Guardados"
                 subtitle="Tu agenda cultural y festivales de Jalisco"
-                count={0}
+                count={favorites.events.length}
                 countLabels={["evento", "eventos"]}
+                isPending={favorites.isPending}
+                isError={favorites.isError}
+                error={favorites.error}
+                onRetry={favorites.refetch}
                 emptyState={
                   <SavedListEmptyState
                     icon={CalendarDays}
@@ -132,7 +158,49 @@ export default function Perfil() {
                     description="Encuentra los próximos eventos y festivales de Jalisco en el mapa para sumarlos a tu agenda."
                   />
                 }
-              />
+              >
+                {favorites.events.map((event) => (
+                  <FavoriteRow
+                    key={event.id}
+                    title={event.nombre}
+                    subtitle={
+                      formatDateRange(event.fecha_inicio, event.fecha_fin || undefined) ||
+                      event.municipio
+                    }
+                    imageUrl={event.imagen_url}
+                  />
+                ))}
+              </SavedFavoritesSection>
+
+              <SavedFavoritesSection
+                icon={UtensilsCrossed}
+                iconClassName="bg-orange-50 text-orange-500"
+                title="Restaurantes Favoritos"
+                subtitle="Tu selección gastronómica de Jalisco"
+                count={favorites.restaurants.length}
+                countLabels={["restaurante", "restaurantes"]}
+                isPending={favorites.isPending}
+                isError={favorites.isError}
+                error={favorites.error}
+                onRetry={favorites.refetch}
+                emptyState={
+                  <SavedListEmptyState
+                    icon={UtensilsCrossed}
+                    title="No tienes restaurantes guardados."
+                    description="Guarda lugares gastronómicos y aparecerán aquí con su horario y contacto."
+                  />
+                }
+              >
+                {favorites.restaurants.map((restaurant) => (
+                  <FavoriteRow
+                    key={restaurant.id}
+                    title={restaurant.nombre}
+                    subtitle={restaurant.municipio || restaurant.direccion}
+                    imageUrl={restaurant.imagen_url}
+                    value={restaurant.calificacion}
+                  />
+                ))}
+              </SavedFavoritesSection>
             </>
           ) : (
             <ProfileGuestCard onPressSignIn={() => router.push("/login")} />

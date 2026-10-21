@@ -33,3 +33,13 @@ export function fetchRestaurants({ limit }: FetchRestaurantsParams = {}) {
 
   return apiFetch<Restaurant[]>(`/core/restaurants/${query ? `?${query}` : ""}`);
 }
+
+/**
+ * Un restaurante por id. GET /api/v1/core/restaurants/{id}/
+ *
+ * La respuesta es la misma que un elemento de la lista, así que también pasa
+ * por `apiFetch`. Se usa, entre otras cosas, para hidratar los favoritos.
+ */
+export function fetchRestaurant(id: string) {
+  return apiFetch<Restaurant>(`/core/restaurants/${id}/`);
+}

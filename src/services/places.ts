@@ -33,3 +33,13 @@ export function fetchPlaces({ limit, categoria }: FetchPlacesParams = {}) {
 
   return apiFetch<Place[]>(`/core/places/${query ? `?${query}` : ""}`);
 }
+
+/**
+ * Un lugar por id. GET /api/v1/core/places/{id}/
+ *
+ * La respuesta es la misma que un elemento de la lista, así que también pasa
+ * por `apiFetch`. Se usa, entre otras cosas, para hidratar los favoritos.
+ */
+export function fetchPlace(id: string) {
+  return apiFetch<Place>(`/core/places/${id}/`);
+}

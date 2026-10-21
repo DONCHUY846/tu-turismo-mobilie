@@ -31,3 +31,13 @@ export function fetchEvents({ limit }: FetchEventsParams = {}) {
 
   return apiFetch<Event[]>(`/core/events/${query ? `?${query}` : ""}`);
 }
+
+/**
+ * Un evento por id. GET /api/v1/core/events/{id}/
+ *
+ * La respuesta es la misma que un elemento de la lista, así que también pasa
+ * por `apiFetch`. Se usa, entre otras cosas, para hidratar los favoritos.
+ */
+export function fetchEvent(id: string) {
+  return apiFetch<Event>(`/core/events/${id}/`);
+}
