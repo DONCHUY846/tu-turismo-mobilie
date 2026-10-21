@@ -57,7 +57,7 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 
 ## Datos, estado y caché
 
-- `src/lib/api.ts` — `API_URL` (de `EXPO_PUBLIC_API_URL`, ver `.env.example`) y `apiFetch<T>()`, que desenvuelve el sobre `{ success, data }` del backend. Todo fetch pasa por ahí.
+- `src/lib/api.ts` — cliente HTTP: `apiFetch<T>()` (desenvuelve el sobre `{ success, data }`) y `apiRequest<T>()` (JSON plano). `API_URL` vive en `src/lib/config.ts` (de `EXPO_PUBLIC_API_URL`, ver `.env.example`). Todo fetch pasa por aquí, y el transporte también se encarga del token de sesión (ver **Autenticación**).
 - `src/services/<recurso>.ts` — un archivo por recurso del backend (`places.ts`, más adelante `events.ts`, `restaurants.ts`): tipos del dominio + funciones `fetchX(params)`. Los tipos reflejan lo que la API devuelve hoy; no inventes campos.
 - `QueryClientProvider` vive en `src/app/_layout.tsx`. Los datos se piden siempre con `useQuery` y una `queryKey` que incluya **todos** los filtros del store.
 - Estados obligatorios en cada lista: **carga** (skeletons, no spinners), **error** (mensaje + reintentar con `refetch`) y **vacío**.
@@ -70,7 +70,13 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 ## Autenticación
 
 - `src/services/auth.ts` — `login`, `refreshSession` y `fetchProfile`. Estos endpoints responden **JSON plano** (sin sobre `{success,data}`), por eso usan `apiRequest` y no `apiFetch`.
-- `src/stores/auth-store.ts` — Zustand + `persist` sobre un adaptador de `expo-secure-store`. Estado: `status: "loading" | "authenticated" | "guest"`, `accessToken`, `refreshToken`, `expiresAt`, `user`. Se persiste solo la sesión, nunca `status`.
+- `src/stores/auth-store.ts` — Zustand + `persist` sobre un adaptador de `expo-secure-store`. Estado: `status: "loading" | "authenticated" | "guest"`, `accessToken`, `refreshToken`, `expiresAt`, `user`, `sessionExpired`. Se persiste solo la sesión, nunca `status` ni `sessionExpired`.
+- **El transporte es el dueño del token** (`src/lib/api.ts`): `apiRequest` inyecta `Authorization: Bearer <accessToken>` y renueva la sesión. Los servicios **no** reciben ni mandan tokens, y los endpoints de auth se marcan con `authenticated: false` para que no se intente refrescar.
+  - **Refresh preventivo**: si el token vence en menos de 2 minutos (`expiresAt - now < PROACTIVE_REFRESH_WINDOW_MS`), se renueva antes de gastar la petición.
+  - **Refresh reactivo**: un 401 dispara un refresh y **un solo reintento** de la petición original. El refresh es una promesa compartida a nivel de módulo, así que varias peticiones en paralelo que reciben 401 a la vez disparan un único refresh.
+  - `src/lib/auth-refresh.ts` hace el POST a `/core/auth/refresh/`. No usa `apiRequest` a propósito: el transporte lo importa, y llamarlo desde ahí sería un ciclo de imports. `src/lib/config.ts` tiene `API_URL` por lo mismo.
+  - La respuesta del refresh **no trae `refresh_token` ni `user`**: `applyRefresh` conserva los valores previos y solo actualiza `accessToken` y `expiresAt`. El refresh token del backend es reutilizable, no se invalida al usarlo.
+- Si el refresh token también expiró, `expireSession()` deja `status: "guest"` y `sessionExpired: true`; `SessionExpiryWatcher` en `src/app/_layout.tsx` manda al login con `params: { reason: "expired" }` y el login avisa *"Tu sesión expiró. Vuelve a iniciar sesión."*.
 - El splash se oculta en `src/app/_layout.tsx` cuando `status !== "loading"` y las fuentes están cargadas: evita el parpadeo del login.
 - Rutas: `src/app/_layout.tsx` declara `unstable_settings.anchor = "(tabs)"` y protege con `<Stack.Protected guard={...}>`. Hoy solo el login está protegido; cuando existan rutas privadas, agrúpalas en `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}`.
 - El acceso al login es **solo desde `src/app/(tabs)/perfil.tsx`**: invitado → `ProfileGuestCard` con botón a `/login`; con sesión → datos de `auth/me/` y botón de cerrar sesión (`signOut()` + `router.replace("/login")`, porque no hay endpoint de logout).

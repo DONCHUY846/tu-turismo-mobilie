@@ -10,7 +10,6 @@ import type { Place } from "@/services/places";
 import type { Restaurant } from "@/services/restaurants";
 
 export type UseFavoritesParams = {
-  accessToken?: string | null;
   /** entra en la `queryKey` para no mezclar los favoritos de dos sesiones */
   userId?: string | null;
   /** mientras sea `false` no se pide nada (invitado, o sesión rehidratándose) */
@@ -37,15 +36,14 @@ export type FavoritesResult = {
  * tirar la sección entera. Por eso `isError` solo mira la lista.
  */
 export function useFavorites({
-  accessToken,
   userId,
   enabled = true,
 }: UseFavoritesParams): FavoritesResult {
-  const isReady = enabled && Boolean(accessToken);
+  const isReady = enabled;
 
   const favorites = useQuery({
     queryKey: ["favorites", userId ?? null],
-    queryFn: () => fetchFavorites(accessToken ?? ""),
+    queryFn: () => fetchFavorites(),
     enabled: isReady,
   });
 

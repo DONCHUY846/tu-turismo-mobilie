@@ -2,6 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
+import type { RefreshResponse } from "@/lib/auth-refresh";
 import type { AuthUser, LoginResponse } from "@/services/auth";
 
 /**
@@ -23,10 +24,21 @@ type Session = {
 
 type AuthStore = Session & {
   status: AuthStatus;
+  /**
+   * `true` cuando la sesión se venció sola (el refresh token también dejó de
+   * servir) y hay que volver a iniciar sesión. No se persiste: al arrancar en
+   * frío la app debe poder abrirse como invitado.
+   */
+  sessionExpired: boolean;
   signIn: (response: LoginResponse) => void;
   signOut: () => void;
   /** pasa de "loading" a "authenticated"/"guest" al terminar de rehidratar */
   setStatus: (status: AuthStatus) => void;
+  /** aplica la respuesta de `/core/auth/refresh/` */
+  applyRefresh: (response: RefreshResponse) => void;
+  /** cierra la sesión porque el refresh token dejó de servir */
+  expireSession: () => void;
+  clearSessionExpired: () => void;
 };
 
 const STORAGE_KEY = "tu-turismo.auth.session";
@@ -56,6 +68,7 @@ export const useAuthStore = create<AuthStore>()(
       ...EMPTY_SESSION,
       // Inicial: el splash se mantiene hasta que termine la rehidratación.
       status: "loading",
+      sessionExpired: false,
       signIn: ({ access_token, refresh_token, expires_in, user }) =>
         set({
           status: "authenticated",
@@ -63,9 +76,25 @@ export const useAuthStore = create<AuthStore>()(
           refreshToken: refresh_token,
           expiresAt: Date.now() + expires_in * 1000,
           user,
+          sessionExpired: false,
         }),
-      signOut: () => set({ ...EMPTY_SESSION, status: "guest" }),
+      signOut: () =>
+        set({ ...EMPTY_SESSION, status: "guest", sessionExpired: false }),
       setStatus: (status) => set({ status }),
+      applyRefresh: ({ access_token, refresh_token, expires_in, user }) =>
+        set((state) => ({
+          status: "authenticated",
+          accessToken: access_token,
+          // el backend puede no rotar el refresh token: si no viene, se conserva
+          refreshToken: refresh_token ?? state.refreshToken,
+          // `0` = expiración desconocida: el transporte solo refresca de forma
+          // preventiva cuando la conoce.
+          expiresAt: expires_in > 0 ? Date.now() + expires_in * 1000 : 0,
+          user: user ? { ...state.user, ...user } : state.user,
+        })),
+      expireSession: () =>
+        set({ ...EMPTY_SESSION, status: "guest", sessionExpired: true }),
+      clearSessionExpired: () => set({ sessionExpired: false }),
     }),
     {
       name: STORAGE_KEY,

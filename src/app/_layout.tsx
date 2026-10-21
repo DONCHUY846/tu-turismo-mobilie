@@ -2,7 +2,7 @@ import "../../global.css";
 
 import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { PortalHost } from "@rn-primitives/portal";
-import { Stack, ThemeProvider } from "expo-router";
+import { Stack, ThemeProvider, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import * as Network from "expo-network";
 import * as React from "react";
@@ -48,6 +48,7 @@ function AppGate() {
   return (
     <QueryClientProvider client={queryClient}>
       <NetworkStateSync />
+      <SessionExpiryWatcher />
       <SplashController />
       <Stack
         screenOptions={{
@@ -66,6 +67,23 @@ function AppGate() {
       <PortalHost />
     </QueryClientProvider>
   );
+}
+
+/**
+ * Avisa al usuario cuando su sesión se venció sola (el refresh token dejó de
+ * servir) y lo manda al login con el motivo, para que no entre sin querer.
+ */
+function SessionExpiryWatcher() {
+  const sessionExpired = useAuthStore((state) => state.sessionExpired);
+  const clearSessionExpired = useAuthStore((state) => state.clearSessionExpired);
+
+  React.useEffect(() => {
+    if (!sessionExpired) return;
+    clearSessionExpired();
+    router.replace({ pathname: "/login", params: { reason: "expired" } });
+  }, [sessionExpired, clearSessionExpired]);
+
+  return null;
 }
 
 /**

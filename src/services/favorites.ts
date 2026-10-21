@@ -21,10 +21,8 @@ export type Favorite = {
 };
 
 /** Favoritos del usuario autenticado. GET /api/v1/core/favorites/ */
-export function fetchFavorites(accessToken: string) {
-  return apiFetch<Favorite[]>("/core/favorites/", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+export function fetchFavorites() {
+  return apiFetch<Favorite[]>("/core/favorites/");
 }
 
 /** `referencia_id` de los favoritos de un tipo, en el orden que los devuelve la API. */

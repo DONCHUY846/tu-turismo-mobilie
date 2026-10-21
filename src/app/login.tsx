@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react-native";
 import * as React from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LoginArtwork } from "@/components/auth/LoginArtwork";
@@ -29,6 +29,9 @@ import { useAuthStore } from "@/stores/auth-store";
 export default function Login() {
   const insets = useSafeAreaInsets();
   const signIn = useAuthStore((state) => state.signIn);
+  // `reason=expired` lo manda el layout cuando la sesión se venció sola.
+  const { reason } = useLocalSearchParams<{ reason?: string }>();
+  const sessionExpired = reason === "expired";
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -51,7 +54,9 @@ export default function Login() {
     ? loginMutation.error instanceof ApiError
       ? (loginMutation.error.detail ?? loginMutation.error.message)
       : "No pudimos iniciar sesión. Inténtalo de nuevo."
-    : undefined;
+    : sessionExpired
+      ? "Tu sesión expiró. Vuelve a iniciar sesión."
+      : undefined;
 
   return (
     <KeyboardAvoidingView

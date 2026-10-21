@@ -44,16 +44,13 @@ export type SendRecommendationsResponse = {
 
 /**
  * Pide las recomendaciones de IA y dispara su envío por correo.
- * POST /api/v1/core/users/send-recommendations/ (requiere sesión: usa el email
- * del token, el payload va vacío).
+ * POST /api/v1/core/users/send-recommendations/ (usa el email del token de la
+ * sesión, el payload va vacío).
  */
-export function sendRecommendations(accessToken: string) {
+export function sendRecommendations() {
   return apiRequest<SendRecommendationsResponse>("/core/users/send-recommendations/", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({}),
   });
 }

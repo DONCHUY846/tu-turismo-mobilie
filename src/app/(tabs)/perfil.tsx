@@ -39,7 +39,6 @@ const USER_LOCATION = "Guadalajara, Jalisco • México";
  */
 export default function Perfil() {
   const status = useAuthStore((state) => state.status);
-  const accessToken = useAuthStore((state) => state.accessToken);
   const storeUser = useAuthStore((state) => state.user);
   const signOut = useAuthStore((state) => state.signOut);
 
@@ -48,8 +47,8 @@ export default function Perfil() {
   // El login solo trae id/email/rol/nombre; `auth/me/` completa el perfil.
   const { data: profile } = useQuery({
     queryKey: ["profile"],
-    queryFn: () => fetchProfile(accessToken),
-    enabled: isAuthenticated && Boolean(accessToken),
+    queryFn: () => fetchProfile(),
+    enabled: isAuthenticated,
   });
 
   const handleSignOut = () => {
@@ -59,7 +58,6 @@ export default function Perfil() {
   };
 
   const favorites = useFavorites({
-    accessToken,
     userId: storeUser.id,
     enabled: isAuthenticated,
   });
@@ -67,7 +65,7 @@ export default function Perfil() {
   // Recomendaciones de IA: es una acción del usuario (POST), no una carga de
   // pantalla, así que va como mutación y no como query.
   const recommendations = useMutation({
-    mutationFn: () => sendRecommendations(accessToken ?? ""),
+    mutationFn: () => sendRecommendations(),
   });
 
   const fullName = [profile?.nombre ?? storeUser.nombre, profile?.apellido]

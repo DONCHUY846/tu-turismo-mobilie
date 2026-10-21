@@ -1,3 +1,4 @@
+import { requestRefresh, type RefreshResponse } from "@/lib/auth-refresh";
 import { apiRequest } from "@/lib/api";
 
 /** Rol del usuario en el backend. */
@@ -36,27 +37,38 @@ export type Profile = {
   preferences: Record<string, unknown>;
 };
 
-/** Inicia sesión. POST /api/v1/core/auth/login/ (responde JSON plano, sin sobre). */
+/**
+ * Inicia sesión. POST /api/v1/core/auth/login/ (responde JSON plano, sin sobre).
+ *
+ * No se manda el token de la sesión: `authenticated: false` evita que el
+ * transporte lo inyecte o intente renovarlo.
+ */
 export function login({ email, password }: { email: string; password: string }) {
   return apiRequest<LoginResponse>("/core/auth/login/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    authenticated: false,
   });
 }
 
-/** Renueva el access token. POST /api/v1/core/auth/refresh/ */
-export function refreshSession(refreshToken: string) {
-  return apiRequest<LoginResponse>("/core/auth/refresh/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: refreshToken }),
-  });
+/**
+ * Renueva el access token. POST /api/v1/core/auth/refresh/
+ *
+ * El transporte lo usa por su cuenta cuando una petición recibe 401; queda
+ * expuesta para casos puntuales. Devuelve `null` si el refresh token ya no sirve.
+ */
+export function refreshSession(
+  refreshToken: string
+): Promise<RefreshResponse | null> {
+  return requestRefresh(refreshToken);
 }
 
-/** Perfil completo del usuario autenticado. GET /api/v1/core/auth/me/ */
-export function fetchProfile(accessToken: string) {
-  return apiRequest<Profile>("/core/auth/me/", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+/**
+ * Perfil completo del usuario autenticado. GET /api/v1/core/auth/me/
+ *
+ * El token lo pone el transporte, que además lo renueva si hace falta.
+ */
+export function fetchProfile() {
+  return apiRequest<Profile>("/core/auth/me/");
 }
