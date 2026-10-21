@@ -79,7 +79,12 @@ export default function Perfil() {
       >
         <AppHeader />
 
-        {isAuthenticated ? <ProfileActions onSignOut={signOut} /> : null}
+        {isAuthenticated ? (
+          <ProfileActions
+            onPressSettings={() => router.push("/editar-perfil")}
+            onSignOut={signOut}
+          />
+        ) : null}
 
         <View className="gap-5 px-4">
           {isAuthenticated ? (
@@ -89,6 +94,7 @@ export default function Perfil() {
                 email={profile?.email ?? storeUser.email}
                 phone={profile?.telefono || undefined}
                 location={USER_LOCATION}
+                avatar={profile?.avatar || undefined}
                 verified={profile?.activo ?? false}
               />
 

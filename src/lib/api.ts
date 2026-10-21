@@ -143,7 +143,10 @@ async function request<T>(
     Accept: "application/json",
     ...((init?.headers ?? {}) as Record<string, string>),
   };
-  if (init?.body && !headers["Content-Type"]) {
+  // El `Content-Type` JSON solo se pone si el body es un string: con un
+  // `FormData` (subida de imágenes) el `fetch` debe poner el `boundary` él
+  // mismo, o la petición se manda con un tipo que no corresponde.
+  if (typeof init?.body === "string" && !headers["Content-Type"]) {
     headers["Content-Type"] = "application/json";
   }
   if (token) {

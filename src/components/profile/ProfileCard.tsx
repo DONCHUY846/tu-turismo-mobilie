@@ -1,3 +1,4 @@
+import { Image } from "expo-image";
 import { Mail, MapPin, Phone, Star } from "lucide-react-native";
 import * as React from "react";
 import { View } from "react-native";
@@ -14,6 +15,8 @@ export type ProfileCardProps = {
   phone?: string;
   /** pill de ubicación; TODO: sustituir por la ubicación real del usuario */
   location?: string;
+  /** URL de la foto de perfil; si no hay, se muestran las iniciales */
+  avatar?: string;
   /** broche de verificación del avatar */
   verified?: boolean;
   className?: string;
@@ -28,6 +31,7 @@ export function ProfileCard({
   email,
   phone,
   location,
+  avatar,
   verified = false,
   className,
 }: ProfileCardProps) {
@@ -38,17 +42,28 @@ export function ProfileCard({
         className
       )}
     >
-      {/* Avatar con iniciales y broche de verificación */}
+      {/* Avatar: la foto si el usuario tiene una, si no las iniciales */}
       <View className="mb-3">
         <View className="rounded-full bg-card p-1 shadow-lg">
           <BrandGradient
             colors={GRADIENTS.brandSoft}
             direction="diagonal"
-            className="h-28 w-28 items-center justify-center rounded-full border-[3px] border-brand-cyan"
+            className="h-28 w-28 items-center justify-center overflow-hidden rounded-full border-[3px] border-brand-cyan"
           >
-            <Text className="select-none text-3xl font-bold tracking-wide text-white">
-              {getInitials(name)}
-            </Text>
+            {avatar ? (
+              <Image
+                source={{ uri: avatar }}
+                contentFit="cover"
+                // `expo-image` no tiene interop de NativeWind: las dimensiones van por `style`.
+                style={{ width: "100%", height: "100%" }}
+                accessibilityLabel={name}
+                transition={200}
+              />
+            ) : (
+              <Text className="select-none text-3xl font-bold tracking-wide text-white">
+                {getInitials(name)}
+              </Text>
+            )}
           </BrandGradient>
         </View>
 

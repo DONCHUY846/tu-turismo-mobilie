@@ -72,3 +72,85 @@ export function refreshSession(
 export function fetchProfile() {
   return apiRequest<Profile>("/core/auth/me/");
 }
+
+/** Campos que acepta `PUT /api/v1/core/auth/me/`. */
+export type ProfileUpdate = {
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  telefono?: string;
+  /** URL de la foto, ya subida */
+  avatar?: string;
+  /**
+   * TODO: el backend responde 500 al recibir este campo (el serializer no
+   * llama `set_password`). Se manda igual para que funcione en cuanto se
+   * arregle del lado del servidor.
+   */
+  password?: string;
+};
+
+/**
+ * Actualiza el perfil del usuario. PUT /api/v1/core/auth/me/
+ *
+ * Acepta campos sueltos y devuelve el perfil completo ya actualizado.
+ */
+export function updateProfile(payload: ProfileUpdate) {
+  return apiRequest<Profile>("/core/auth/me/", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** Archivo listo para mandarse en el `FormData` de la subida. */
+export type UploadFile = {
+  /** URI local del archivo, p. ej. `file:///.../avatar.jpg` */
+  uri: string;
+  /** nombre del archivo, p. ej. `avatar.jpg` */
+  name: string;
+  /** tipo MIME, p. ej. `image/jpeg` */
+  type: string;
+};
+
+/** Respuesta de `POST /api/v1/core/upload/`. */
+export type UploadResponse = {
+  url?: string;
+  secure_url?: string;
+  data?: { url?: string; secure_url?: string };
+};
+
+/**
+ * Sube una imagen. POST /api/v1/core/upload/
+ *
+ * El backend acepta el archivo en el campo `file` (o `image`) y lo guarda en la
+ * carpeta `folder` de Cloudinary.
+ */
+export function uploadAvatar(file: UploadFile) {
+  const form = new FormData();
+  // En React Native, `FormData.append` acepta este objeto con `uri`/`name`/`type`
+  // y lo convierte en un archivo multipart; el cast es porque el tipo de DOM
+  // solo conoce `Blob`.
+  form.append("file", file as unknown as Blob);
+  form.append("folder", "tu-turismo/avatars");
+
+  return apiRequest<UploadResponse>("/core/upload/", {
+    method: "POST",
+    body: form,
+  });
+}
+
+/**
+ * Extrae la URL pública de la imagen de la respuesta del upload.
+ *
+ * TODO: el backend está caído (500 por la config de Cloudinary), así que no se
+ * pudo ver la forma real de la respuesta. Se aceptan las variantes habituales
+ * y, cuando el endpoint funcione, se puede dejar solo la buena.
+ */
+export function extractUploadUrl(payload: UploadResponse): string | null {
+  return (
+    payload?.data?.url ??
+    payload?.data?.secure_url ??
+    payload?.url ??
+    payload?.secure_url ??
+    null
+  );
+}

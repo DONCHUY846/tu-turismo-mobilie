@@ -27,6 +27,7 @@ Run lint and typecheck before declaring any task done.
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
 - Estructura actual: `src/app/(tabs)/` (Inicio, Explorar, Perfil) con la barra inferior propia vía `tabBar` en `(tabs)/_layout.tsx`; `login.tsx` vive en el Stack raíz para que no herede las pestañas. El grupo `(tabs)` no aparece en la URL: `(tabs)/index.tsx` sigue siendo `/`.
+- Rutas privadas: `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}` (ver `(app)/_layout.tsx`) y registrado en el Stack raíz con `<Stack.Screen name="(app)" />`. El grupo tampoco aparece en la URL: `(app)/editar-perfil.tsx` es `/editar-perfil`.
 - La barra de navegación usa **JS tabs** (`expo-router/tabs`) y no native tabs, para conservar los íconos de lucide y los colores de marca. `AppTabBar` (`src/components/navigation/`) adapta las rutas del navegador a `BottomTabBar`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
 - Docs: https://docs.expo.dev/router/introduction.md
@@ -58,6 +59,7 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 ## Datos, estado y caché
 
 - `src/lib/api.ts` — cliente HTTP: `apiFetch<T>()` (desenvuelve el sobre `{ success, data }`) y `apiRequest<T>()` (JSON plano). `API_URL` vive en `src/lib/config.ts` (de `EXPO_PUBLIC_API_URL`, ver `.env.example`). Todo fetch pasa por aquí, y el transporte también se encarga del token de sesión (ver **Autenticación**).
+  - El `Content-Type: application/json` solo se pone si el body es un **string**. Con un `FormData` (subida de imágenes) el `fetch` debe poner el `boundary`; si el transporte lo fuerza, la subida se manda con un tipo que no corresponde.
 - `src/services/<recurso>.ts` — un archivo por recurso del backend (`places.ts`, más adelante `events.ts`, `restaurants.ts`): tipos del dominio + funciones `fetchX(params)`. Los tipos reflejan lo que la API devuelve hoy; no inventes campos.
 - `QueryClientProvider` vive en `src/app/_layout.tsx`. Los datos se piden siempre con `useQuery` y una `queryKey` que incluya **todos** los filtros del store.
 - Estados obligatorios en cada lista: **carga** (skeletons, no spinners), **error** (mensaje + reintentar con `refetch`) y **vacío**.
@@ -70,6 +72,7 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 ## Autenticación
 
 - `src/services/auth.ts` — `login`, `refreshSession` y `fetchProfile`. Estos endpoints responden **JSON plano** (sin sobre `{success,data}`), por eso usan `apiRequest` y no `apiFetch`.
+- `src/services/auth.ts` — además `updateProfile()` (PUT `/core/auth/me/`, acepta `nombre`, `apellido`, `email`, `telefono`, `avatar` y `password`) y `uploadAvatar()` (POST `/core/upload/`, `FormData` con `file` + `folder: "tu-turismo/avatars"`).
 - `src/stores/auth-store.ts` — Zustand + `persist` sobre un adaptador de `expo-secure-store`. Estado: `status: "loading" | "authenticated" | "guest"`, `accessToken`, `refreshToken`, `expiresAt`, `user`, `sessionExpired`. Se persiste solo la sesión, nunca `status` ni `sessionExpired`.
 - **El transporte es el dueño del token** (`src/lib/api.ts`): `apiRequest` inyecta `Authorization: Bearer <accessToken>` y renueva la sesión. Los servicios **no** reciben ni mandan tokens, y los endpoints de auth se marcan con `authenticated: false` para que no se intente refrescar.
   - **Refresh preventivo**: si el token vence en menos de 2 minutos (`expiresAt - now < PROACTIVE_REFRESH_WINDOW_MS`), se renueva antes de gastar la petición.
@@ -86,6 +89,9 @@ Docs: https://reactnativereusables.com/docs/installation/manual
   - El login solo se alcanza con `push` (desde la tarjeta de invitado), así que su botón "Volver" siempre tiene destino. El logout no pasa por el login: manda a Inicio, ya como invitado.
 - Después de `signIn()` hay que navegar con `router.replace("/")`, nunca `push` (para no dejar el login en el historial).
 - TODO global: no hay endpoint de logout (el token expira solo) ni de recuperación de contraseña.
+- Pendiente del backend (bloquean features, no son del cliente):
+  - `POST /core/upload/` responde **500** (`Invalid cloud_name tuturismo`): el cloud name correcto es `dxcqksjbp`. Hasta que se arregle, la foto de perfil no se puede subir.
+  - `PUT /core/auth/me/` con `password` responde **500**: el serializer no llama `set_password`. El formulario de `/editar-perfil` ya manda el campo, listo para cuando se arregle.
 
 ## Rules
 

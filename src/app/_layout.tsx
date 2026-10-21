@@ -58,6 +58,8 @@ function AppGate() {
       >
         {/* Pestañas de la app: Inicio, Explorar y Perfil. */}
         <Stack.Screen name="(tabs)" />
+        {/* Rutas privadas: necesitan sesión (ver `(app)/_layout.tsx`). */}
+        <Stack.Screen name="(app)" />
         {/* Con sesión activa el login no existe: el router vuelve al `anchor`. */}
         <Stack.Protected guard={status === "guest"}>
           <Stack.Screen name="login" />

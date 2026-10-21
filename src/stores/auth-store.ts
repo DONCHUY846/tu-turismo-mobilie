@@ -39,6 +39,8 @@ type AuthStore = Session & {
   /** cierra la sesión porque el refresh token dejó de servir */
   expireSession: () => void;
   clearSessionExpired: () => void;
+  /** actualiza los datos del usuario en memoria (tras editar el perfil) */
+  updateUser: (user: Partial<AuthUser>) => void;
 };
 
 const STORAGE_KEY = "tu-turismo.auth.session";
@@ -95,6 +97,8 @@ export const useAuthStore = create<AuthStore>()(
       expireSession: () =>
         set({ ...EMPTY_SESSION, status: "guest", sessionExpired: true }),
       clearSessionExpired: () => set({ sessionExpired: false }),
+      updateUser: (user) =>
+        set((state) => ({ user: { ...state.user, ...user } })),
     }),
     {
       name: STORAGE_KEY,

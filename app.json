@@ -35,7 +35,15 @@
           "imageWidth": 76
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tu Turismo necesita acceso a tus fotos para que puedas elegir tu foto de perfil.",
+          "cameraPermission": "Tu Turismo necesita la cámara para que puedas tomar tu foto de perfil.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
