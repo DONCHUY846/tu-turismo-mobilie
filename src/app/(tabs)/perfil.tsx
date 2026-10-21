@@ -13,6 +13,7 @@ import { ProfileGuestCard } from "@/components/profile/ProfileGuestCard";
 import { SavedFavoritesSection } from "@/components/profile/SavedFavoritesSection";
 import { SavedListEmptyState } from "@/components/profile/SavedListSection";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useSignOut } from "@/hooks/useSignOut";
 import { formatDateRange } from "@/lib/format";
 import { fetchProfile } from "@/services/auth";
 import { sendRecommendations } from "@/services/recommendations";
@@ -40,22 +41,18 @@ const USER_LOCATION = "Guadalajara, Jalisco • México";
 export default function Perfil() {
   const status = useAuthStore((state) => state.status);
   const storeUser = useAuthStore((state) => state.user);
-  const signOut = useAuthStore((state) => state.signOut);
+  const signOut = useSignOut();
 
   const isAuthenticated = status === "authenticated";
 
   // El login solo trae id/email/rol/nombre; `auth/me/` completa el perfil.
+  // La query lleva el id del usuario para que la caché no se mezcle entre
+  // sesiones.
   const { data: profile } = useQuery({
-    queryKey: ["profile"],
+    queryKey: ["profile", storeUser.id],
     queryFn: () => fetchProfile(),
     enabled: isAuthenticated,
   });
-
-  const handleSignOut = () => {
-    // El backend no tiene logout: solo se borra la sesión local.
-    signOut();
-    router.replace("/login");
-  };
 
   const favorites = useFavorites({
     userId: storeUser.id,
@@ -82,7 +79,7 @@ export default function Perfil() {
       >
         <AppHeader />
 
-        {isAuthenticated ? <ProfileActions onSignOut={handleSignOut} /> : null}
+        {isAuthenticated ? <ProfileActions onSignOut={signOut} /> : null}
 
         <View className="gap-5 px-4">
           {isAuthenticated ? (

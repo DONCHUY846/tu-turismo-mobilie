@@ -79,7 +79,11 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 - Si el refresh token también expiró, `expireSession()` deja `status: "guest"` y `sessionExpired: true`; `SessionExpiryWatcher` en `src/app/_layout.tsx` manda al login con `params: { reason: "expired" }` y el login avisa *"Tu sesión expiró. Vuelve a iniciar sesión."*.
 - El splash se oculta en `src/app/_layout.tsx` cuando `status !== "loading"` y las fuentes están cargadas: evita el parpadeo del login.
 - Rutas: `src/app/_layout.tsx` declara `unstable_settings.anchor = "(tabs)"` y protege con `<Stack.Protected guard={...}>`. Hoy solo el login está protegido; cuando existan rutas privadas, agrúpalas en `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}`.
-- El acceso al login es **solo desde `src/app/(tabs)/perfil.tsx`**: invitado → `ProfileGuestCard` con botón a `/login`; con sesión → datos de `auth/me/` y botón de cerrar sesión (`signOut()` + `router.replace("/login")`, porque no hay endpoint de logout).
+- El acceso al login es **solo desde `src/app/(tabs)/perfil.tsx`**: invitado → `ProfileGuestCard` con botón a `/login`; con sesión → datos de `auth/me/` y botón de cerrar sesión.
+- **Cerrar sesión**: `src/hooks/useSignOut.ts` (`signOut()` + `queryClient.clear()` + `router.navigate("/")`). El botón pide confirmación con un `AlertDialog` (componente de `react-native-reusables`, ya instalado) dentro de `ProfileActions`.
+  - `queryClient.clear()` es obligatorio: sin él, la query `["profile", userId]` y la caché de favoritos seguirían mostrando datos del usuario anterior al entrar con otra cuenta.
+  - El backend **no tiene endpoint de logout** (ni blacklist): el cierre es local. El refresh token sigue vivo en el servidor hasta expirar, pero se borra del dispositivo.
+  - El login solo se alcanza con `push` (desde la tarjeta de invitado), así que su botón "Volver" siempre tiene destino. El logout no pasa por el login: manda a Inicio, ya como invitado.
 - Después de `signIn()` hay que navegar con `router.replace("/")`, nunca `push` (para no dejar el login en el historial).
 - TODO global: no hay endpoint de logout (el token expira solo) ni de recuperación de contraseña.
 
