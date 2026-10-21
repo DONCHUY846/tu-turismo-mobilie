@@ -1,6 +1,6 @@
 import { ChevronsUp, Mail, MapPin, Phone, type LucideIcon } from "lucide-react-native";
 import * as React from "react";
-import { Linking, Pressable, View } from "react-native";
+import { Alert, Linking, Pressable, View } from "react-native";
 
 import { Icon } from "@/components/ui/icon";
 import { Separator } from "@/components/ui/separator";
@@ -25,12 +25,20 @@ export type AppFooterProps = {
   copyright: string;
   /** callback del botón "volver arriba" */
   onScrollToTop?: () => void;
+  /**
+   * Se llama al presionar un enlace con ancla (`#seccion`), para hacer scroll
+   * a esa sección de la pantalla.
+   */
+  onPressAnchor?: (anchor: string) => void;
   className?: string;
 };
 
 /**
  * Pie de página: descripción, listas de enlaces, datos de contacto y copyright.
- * En móvil los enlaces opens via `router` cuando tengan `href`.
+ *
+ * Los enlaces se abren según su `href`:
+ *  - `#ancla` → scroll a una sección de la pantalla (`onPressAnchor`).
+ *  - `http(s)://` o `mailto:` → navegador del sistema.
  */
 export function AppFooter({
   description,
@@ -41,11 +49,25 @@ export function AppFooter({
   contact,
   copyright,
   onScrollToTop,
+  onPressAnchor,
   className,
 }: AppFooterProps) {
-  // TODO: navegar con `router.push(link.href)` cuando exista el mapa de rutas.
   const openLink = (href?: string) => {
-    if (href?.startsWith("http") || href?.startsWith("mailto:")) void Linking.openURL(href);
+    if (!href) return;
+
+    if (href.startsWith("#")) {
+      onPressAnchor?.(href);
+      return;
+    }
+
+    if (href.startsWith("http") || href.startsWith("mailto:")) {
+      void Linking.openURL(href).catch(() => {
+        Alert.alert(
+          "No pudimos abrir el enlace",
+          "Revisa tu conexión e inténtalo de nuevo."
+        );
+      });
+    }
   };
 
   return (

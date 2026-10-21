@@ -30,6 +30,7 @@ Run lint and typecheck before declaring any task done.
 - Rutas privadas: `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}` (ver `(app)/_layout.tsx`) y registrado en el Stack raíz con `<Stack.Screen name="(app)" />`. El grupo tampoco aparece en la URL: `(app)/editar-perfil.tsx` es `/editar-perfil`.
 - La barra de navegación usa **JS tabs** (`expo-router/tabs`) y no native tabs, para conservar los íconos de lucide y los colores de marca. `AppTabBar` (`src/components/navigation/`) adapta las rutas del navegador a `BottomTabBar`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
+- Enlaces del footer (`src/data/home.ts`): el `href` decide cómo se abre — URL externa → `Linking.openURL` (navegador del sistema), ancla `#seccion` → scroll a la sección de la home (el home mide cada sección con `onLayout` y el `AppFooter` recibe `onPressAnchor`), ruta interna → `router.push` cuando existan.
 - Docs: https://docs.expo.dev/router/introduction.md
 
 ## Building with EAS

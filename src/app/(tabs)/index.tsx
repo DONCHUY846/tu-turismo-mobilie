@@ -1,5 +1,5 @@
 import * as React from "react";
-import { ScrollView, View } from "react-native";
+import { ScrollView, View, type LayoutChangeEvent } from "react-native";
 
 import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
@@ -37,6 +37,27 @@ import {
  */
 export default function Index() {
   const scrollRef = React.useRef<ScrollView>(null);
+  /**
+   * Posición de cada sección dentro del contenido del scroll, para que los
+   * anclas del footer (`#lugares`, `#eventos`, `#restaurantes`) bajen justo ahí.
+   *
+   * Las secciones son hijas directas del `ScrollView`, así que el `y` del
+   * `onLayout` ya es la posición en el contenido (sin offsets ni sumas).
+   */
+  const sectionOffsets = React.useRef<Record<string, number>>({});
+
+  const measureSection = React.useCallback(
+    (anchor: string) => (event: LayoutChangeEvent) => {
+      sectionOffsets.current[anchor] = event.nativeEvent.layout.y;
+    },
+    []
+  );
+
+  const scrollToAnchor = React.useCallback((anchor: string) => {
+    const y = sectionOffsets.current[anchor.replace("#", "")];
+    if (y === undefined) return;
+    scrollRef.current?.scrollTo({ y, animated: true });
+  }, []);
 
   return (
     <View className="flex-1 bg-background">
@@ -61,45 +82,50 @@ export default function Index() {
           highlight={HERO.highlight}
           subtitle={HERO.subtitle}
           primaryLabel={HERO.primaryLabel}
-          // TODO: navegar a la sección de lugares al completar la lista.
-          onPrimaryPress={() => {}}
+          onPrimaryPress={() => scrollToAnchor("#lugares")}
           secondaryLabel={HERO.secondaryLabel}
-          // TODO: navegar a la sección de eventos al completar la lista.
-          onSecondaryPress={() => {}}
+          onSecondaryPress={() => scrollToAnchor("#eventos")}
         />
 
-        <View className="mt-8 gap-y-12 px-4 pb-8">
-          {/* 4 + 5. Categorías: acceso rápido a cada tipo de contenido. */}
-          <View>
-            <SectionHeader
-              align="center"
-              title="Explora por Categoría"
-              subtitle="Encuentra exactamente lo que buscas navegando por nuestras secciones populares."
-            />
-            <CategoryGrid>
-              {HOME_CATEGORIES.map((category) => (
-                <CategoryCard
-                  key={category.key}
-                  label={category.label}
-                  icon={category.icon}
-                  tone={category.tone}
-                  // TODO: navegar a la ruta de la categoría cuando exista.
-                  onPress={() => {}}
-                />
-              ))}
-            </CategoryGrid>
-          </View>
+        {/* 4 + 5. Categorías: acceso rápido a cada tipo de contenido. */}
+        <View className="mt-8 px-4">
+          <SectionHeader
+            align="center"
+            title="Explora por Categoría"
+            subtitle="Encuentra exactamente lo que buscas navegando por nuestras secciones populares."
+          />
+          <CategoryGrid>
+            {HOME_CATEGORIES.map((category) => (
+              <CategoryCard
+                key={category.key}
+                label={category.label}
+                icon={category.icon}
+                tone={category.tone}
+                // TODO: navegar a la ruta de la categoría cuando exista.
+                onPress={() => {}}
+              />
+            ))}
+          </CategoryGrid>
+        </View>
 
-          {/* 6. Lugares destacados: listado real desde la API
-              (GET /api/v1/core/places/), con skeletons de carga y estado de error. */}
+        {/* 6. Lugares destacados: listado real desde la API
+            (GET /api/v1/core/places/), con skeletons de carga y estado de error. */}
+        <View className="mt-12 px-4" onLayout={measureSection("lugares")}>
           <FeaturedPlaces />
+        </View>
 
-          {/* 7. Próximos eventos: listado real desde la API
-              (GET /api/v1/core/events/), ordenado por fecha en el cliente. */}
+        {/* 7. Próximos eventos: listado real desde la API
+            (GET /api/v1/core/events/), ordenado por fecha en el cliente. */}
+        <View className="mt-12 px-4" onLayout={measureSection("eventos")}>
           <UpcomingEvents />
+        </View>
 
-          {/* 8. Restaurantes recomendados: listado real desde la API
-              (GET /api/v1/core/restaurants/). */}
+        {/* 8. Restaurantes recomendados: listado real desde la API
+            (GET /api/v1/core/restaurants/). */}
+        <View
+          className="mt-12 px-4 pb-8"
+          onLayout={measureSection("restaurantes")}
+        >
           <RecommendedRestaurants />
         </View>
 
@@ -111,6 +137,7 @@ export default function Index() {
           contact={FOOTER_CONTACT}
           copyright={FOOTER_CONTACT.copyright}
           onScrollToTop={() => scrollRef.current?.scrollTo({ y: 0, animated: true })}
+          onPressAnchor={scrollToAnchor}
         />
       </ScrollView>
     </View>

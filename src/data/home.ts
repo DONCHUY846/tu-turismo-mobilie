@@ -36,10 +36,17 @@ export const HOME_CATEGORIES: HomeCategory[] = [
   { key: "tours", label: "Tours", icon: Map, tone: "emerald" },
 ];
 
-/** Enlace del footer. `href` vacío = enlace sin destino definido todavía. */
+/**
+ * Enlace del footer.
+ *
+ * `href` puede ser:
+ *  - una URL externa (`https://…`): se abre en el navegador del sistema.
+ *  - un ancla (`#seccion`): hace scroll a esa sección de la home.
+ *  - una ruta interna (`/algo`): se navegará con `router.push` cuando haya rutas.
+ * `href` vacío = enlace sin destino definido todavía.
+ */
 export type FooterLink = {
   label: string;
-  /** TODO: reemplazar por la ruta real de Expo Router cuando exista */
   href?: string;
 };
 
@@ -51,10 +58,10 @@ export const FOOTER_QUICK_LINKS: FooterLink[] = [
 ];
 
 export const FOOTER_INFO_LINKS: FooterLink[] = [
-  { label: "Acerca de nosotros" },
-  { label: "Términos y condiciones" },
-  { label: "Política de privacidad" },
-  { label: "Preguntas frecuentes" },
+  { label: "Acerca de nosotros", href: "https://tu-turismo.com.mx/acerca" },
+  { label: "Términos y condiciones", href: "https://tu-turismo.com.mx/terminos" },
+  { label: "Política de privacidad", href: "https://tu-turismo.com.mx/privacidad" },
+  { label: "Preguntas frecuentes", href: "https://tu-turismo.com.mx/faq" },
 ];
 
 export const FOOTER_CONTACT = {
