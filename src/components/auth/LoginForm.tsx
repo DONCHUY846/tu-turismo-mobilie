@@ -1,101 +1,87 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react-native";
 import * as React from "react";
 import { Pressable, View } from "react-native";
+import { useController, useForm } from "react-hook-form";
+import { router } from "expo-router";
 
+import { FormField } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Text } from "@/components/ui/text";
+import { loginSchema, type LoginFormValues } from "@/lib/validators";
 
 export type LoginFormProps = {
-  email: string;
-  password: string;
-  onChangeEmail: (value: string) => void;
-  onChangePassword: (value: string) => void;
-  onSubmit: () => void;
+  /** se llama con los datos ya validados y normalizados */
+  onSubmit: (values: LoginFormValues) => void;
   isPending?: boolean;
   /** mensaje de error del backend, p. ej. "El email o la contraseña son incorrectos." */
   error?: string;
 };
 
 /**
- * Formulario de acceso: correo, contraseña con toggle de visibilidad, enlace de
- * recuperación y los botones de entrada y registro.
+ * Formulario de acceso: correo, contraseña con toggle de visibilidad, enlace
+ * de recuperación y los botones de entrada y registro.
+ *
+ * La validación la hace Zod (`loginSchema`): no se llama al backend hasta que
+ * el formulario es válido.
+ *
+ * Los campos usan `useController` y **no** `register`: `register` espera
+ * eventos de web (`event.target.value`) y en React Native el texto llega en
+ * `onChangeText`. Con `register`, RHF guardaba el evento como valor del campo
+ * y todos los campos fallaban la validación.
  */
-export function LoginForm({
-  email,
-  password,
-  onChangeEmail,
-  onChangePassword,
-  onSubmit,
-  isPending = false,
-  error,
-}: LoginFormProps) {
+export function LoginForm({ onSubmit, isPending = false, error }: LoginFormProps) {
   const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
-  const canSubmit = email.trim().length > 0 && password.length > 0 && !isPending;
+  const { control, handleSubmit } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+    mode: "onBlur",
+  });
+
+  const email = useController({ control, name: "email" });
+  const password = useController({ control, name: "password" });
 
   return (
     <View className="gap-y-4">
       {/* Correo electrónico */}
-      <View>
-        <Label
-          nativeID="login-email"
-          className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-700"
-        >
-          Correo electrónico
-        </Label>
-        <View className="flex-row items-center gap-2 rounded-2xl border border-slate-200 bg-brand-sand pl-3.5 pr-3">
-          <Icon as={Mail} className="shrink-0 text-brand-cyan" size={20} />
-          <Input
-            nativeID="login-email"
-            value={email}
-            onChangeText={onChangeEmail}
-            placeholder="viajero@ejemplo.com"
-            placeholderTextColor="#94a3b8"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            autoCorrect={false}
-            returnKeyType="next"
-            // el Input base trae su propio borde/fondo: aquí manda el del grupo
-            className="h-12 flex-1 border-0 bg-transparent pl-0 pr-0 text-sm text-slate-900 shadow-none sm:h-12"
-          />
-        </View>
-      </View>
+      <FormField
+        label="Correo electrónico"
+        icon={Mail}
+        error={email.fieldState.error?.message}
+        inputProps={{
+          value: email.field.value,
+          onChangeText: email.field.onChange,
+          onBlur: email.field.onBlur,
+          nativeID: "login-email",
+          placeholder: "viajero@ejemplo.com",
+          placeholderTextColor: "#94a3b8",
+          autoCapitalize: "none",
+          autoComplete: "email",
+          autoCorrect: false,
+          returnKeyType: "next",
+        }}
+      />
 
       {/* Contraseña */}
-      <View>
-        <View className="mb-1.5 flex-row items-center justify-between">
-          <Label
-            nativeID="login-password"
-            className="text-xs font-semibold uppercase tracking-wider text-slate-700"
-          >
-            Contraseña
-          </Label>
-          {/* TODO: el backend no expone recuperación de contraseña. */}
-          <Pressable accessibilityRole="link" onPress={() => {}} className="active:opacity-70">
-            <Text className="text-xs font-medium text-brand-terracotta">
-              ¿Olvidaste tu contraseña?
-            </Text>
-          </Pressable>
-        </View>
-
-        <View className="flex-row items-center gap-2 rounded-2xl border border-slate-200 bg-brand-sand pl-3.5 pr-3">
-          <Icon as={Lock} className="shrink-0 text-brand-cyan" size={20} />
-          <Input
-            nativeID="login-password"
-            value={password}
-            onChangeText={onChangePassword}
-            placeholder="••••••••"
-            placeholderTextColor="#94a3b8"
-            secureTextEntry={!isPasswordVisible}
-            autoCapitalize="none"
-            autoComplete="current-password"
-            returnKeyType="go"
-            onSubmitEditing={canSubmit ? onSubmit : undefined}
-            className="h-12 flex-1 border-0 bg-transparent pl-0 pr-0 text-sm text-slate-900 shadow-none sm:h-12"
-          />
+      <FormField
+        label="Contraseña"
+        icon={Lock}
+        error={password.fieldState.error?.message}
+        inputProps={{
+          value: password.field.value,
+          onChangeText: password.field.onChange,
+          onBlur: password.field.onBlur,
+          nativeID: "login-password",
+          placeholder: "••••••••",
+          placeholderTextColor: "#94a3b8",
+          autoCapitalize: "none",
+          autoComplete: "current-password",
+          returnKeyType: "go",
+          onSubmitEditing: handleSubmit(onSubmit),
+          secureTextEntry: !isPasswordVisible,
+        }}
+        accessory={
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
@@ -108,7 +94,16 @@ export function LoginForm({
               size={20}
             />
           </Pressable>
-        </View>
+        }
+      />
+
+      <View className="flex-row items-center justify-end">
+        {/* TODO: el backend no expone recuperación de contraseña. */}
+        <Pressable accessibilityRole="link" onPress={() => {}} className="active:opacity-70">
+          <Text className="text-xs font-medium text-brand-terracotta">
+            ¿Olvidaste tu contraseña?
+          </Text>
+        </Pressable>
       </View>
 
       {error ? (
@@ -120,8 +115,8 @@ export function LoginForm({
       {/* Acciones */}
       <View className="gap-y-2.5 pt-1">
         <Button
-          onPress={onSubmit}
-          disabled={!canSubmit}
+          onPress={handleSubmit(onSubmit)}
+          disabled={isPending}
           className="h-auto rounded-2xl border border-slate-800 bg-brand-navy py-3.5 shadow-lg shadow-slate-900/15 active:bg-slate-800"
         >
           <Text className="text-sm font-semibold tracking-wide text-white">
@@ -130,11 +125,10 @@ export function LoginForm({
           {!isPending ? <Icon as={ChevronRight} className="text-brand-cyan" size={16} /> : null}
         </Button>
 
-        {/* TODO: implementar con POST /core/auth/register/ cuando se documente el body. */}
         <Button
           variant="outline"
-          onPress={() => {}}
-          className="h-auto rounded-2xl border border-brand-cyan/25 bg-brand-cyan/10 py-3.5 active:bg-brand-cyan/20"
+          onPress={() => router.push("/registro")}
+          className="h-auto rounded-2xl border-brand-cyan/25 bg-brand-cyan/10 py-3.5 active:bg-brand-cyan/20"
         >
           <Text className="text-sm font-semibold tracking-wide text-brand-cyanHover">
             Crear cuenta nueva

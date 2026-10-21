@@ -70,10 +70,19 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 - Fechas: llegan como texto (`"2026-07-25"` o `"2026-09-03 00:00:00"`). Formatear siempre con `src/lib/format.ts`; no usar `new Date()` directo ni `Intl`, para no tener desfases de zona horaria.
 - Estados de lista reutilizables: `CardSkeleton` (carga), `SectionErrorState` (error + reintento) y el texto de vacío de cada sección.
 
+## Formularios y validación
+
+- `src/lib/validators.ts` — los esquemas **Zod** de los formularios (`loginSchema`, `registerSchema`, `profileSchema`) y sus tipos. Los esquemas además **transforman** los valores (recortan, bajan a minúsculas el correo, dejan el teléfono solo con dígitos), así que lo que sale de `parse` ya va normalizado al backend.
+- Los formularios usan **react-hook-form + `@hookform/resolvers/zod`**: el componente del formulario se encarga de la validación (`useForm` + `zodResolver`) y entrega los datos ya validados a la pantalla, que es la que hace la mutación.
+- **En React Native, los campos van con `useController`, nunca con `register`**: `register` espera eventos de web (`event.target.value`) y además devuelve `onBlur: onChange` (el mismo handler), así que con el evento de blur de RN —que no trae `target` en el nivel superior— RHF guardaba el **objeto del evento** como valor del campo y **todos** los campos fallaban la validación (o reventaba al salir del campo). Con `useController` se usa `onChangeText={field.onChange}` (recibe el texto plano) y `onBlur={field.onBlur}` (no necesita argumentos), y `value={field.value}` deja el input controlado.
+- `src/components/FormField.tsx` — el campo con etiqueta, ícono, input y error, compartido por los formularios de auth y el de perfil.
+- **El backend casi no valida** (acepta contraseñas de 5 letras, correos inválidos y teléfonos vacíos): la validación del cliente es la única barrera. `POST /core/auth/register/` solo rechaza el email duplicado y tiene un rate limit de 5 intentos (429).
+
 ## Autenticación
 
 - `src/services/auth.ts` — `login`, `refreshSession` y `fetchProfile`. Estos endpoints responden **JSON plano** (sin sobre `{success,data}`), por eso usan `apiRequest` y no `apiFetch`.
-- `src/services/auth.ts` — además `updateProfile()` (PUT `/core/auth/me/`, acepta `nombre`, `apellido`, `email`, `telefono`, `avatar` y `password`) y `uploadAvatar()` (POST `/core/upload/`, `FormData` con `file` + `folder: "tu-turismo/avatars"`).
+- `src/services/auth.ts` — además `register()` (POST `/core/auth/register/`, responde igual que el login: **registrarse inicia sesión**) y `updateProfile()` (PUT `/core/auth/me/`, acepta `nombre`, `apellido`, `email`, `telefono`, `avatar` y `password`) y `uploadAvatar()` (POST `/core/upload/`, `FormData` con `file` + `folder: "tu-turismo/avatars"`).
+- El `rol` del alta va **siempre fijo en `"turista"`**: el backend acepta el que le mande el cliente (incluso `"admin"`), así que no se toma de los datos del formulario.
 - `src/stores/auth-store.ts` — Zustand + `persist` sobre un adaptador de `expo-secure-store`. Estado: `status: "loading" | "authenticated" | "guest"`, `accessToken`, `refreshToken`, `expiresAt`, `user`, `sessionExpired`. Se persiste solo la sesión, nunca `status` ni `sessionExpired`.
 - **El transporte es el dueño del token** (`src/lib/api.ts`): `apiRequest` inyecta `Authorization: Bearer <accessToken>` y renueva la sesión. Los servicios **no** reciben ni mandan tokens, y los endpoints de auth se marcan con `authenticated: false` para que no se intente refrescar.
   - **Refresh preventivo**: si el token vence en menos de 2 minutos (`expiresAt - now < PROACTIVE_REFRESH_WINDOW_MS`), se renueva antes de gastar la petición.

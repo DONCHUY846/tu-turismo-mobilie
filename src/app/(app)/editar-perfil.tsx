@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react-native";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ChevronLeft, Eye, EyeOff, Lock, Mail, Phone, User, UserRound } from "lucide-react-native";
 import * as React from "react";
 import {
   KeyboardAvoidingView,
@@ -9,16 +10,17 @@ import {
   View,
 } from "react-native";
 import { router } from "expo-router";
+import { useController, useForm } from "react-hook-form";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AvatarInput, type PickedImage } from "@/components/profile/AvatarInput";
+import { FormField } from "@/components/FormField";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Text } from "@/components/ui/text";
 import { ApiError } from "@/lib/api";
+import { profileSchema, type ProfileFormValues } from "@/lib/validators";
 import {
   extractUploadUrl,
   fetchProfile,
@@ -128,22 +130,40 @@ function Screen({ children }: { children: React.ReactNode }) {
 /**
  * Formulario de edición. Se monta cuando el perfil ya está cargado, así que
  * sus valores iniciales salen directo del perfil (sin efectos).
+ *
+ * Usa los mismos esquemas Zod que el alta (`profileSchema`), con la
+ * contraseña opcional: vacío = no cambiarla.
  */
 function PerfilForm({ profile }: { profile: Profile }) {
   const queryClient = useQueryClient();
   const userId = useAuthStore((state) => state.user.id);
   const updateUser = useAuthStore((state) => state.updateUser);
 
-  const [nombre, setNombre] = React.useState(profile.nombre ?? "");
-  const [apellido, setApellido] = React.useState(profile.apellido ?? "");
-  const [email, setEmail] = React.useState(profile.email ?? "");
-  const [telefono, setTelefono] = React.useState(profile.telefono ?? "");
-  const [password, setPassword] = React.useState("");
-  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [isPasswordVisible, setIsPasswordVisible] = React.useState(false);
   const [picked, setPicked] = React.useState<PickedImage | null>(null);
 
+  const { control, handleSubmit } = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      nombre: profile.nombre ?? "",
+      apellido: profile.apellido ?? "",
+      email: profile.email ?? "",
+      telefono: profile.telefono ?? "",
+      password: "",
+      confirmPassword: "",
+    },
+    mode: "onBlur",
+  });
+
+  const nombre = useController({ control, name: "nombre" });
+  const apellido = useController({ control, name: "apellido" });
+  const email = useController({ control, name: "email" });
+  const telefono = useController({ control, name: "telefono" });
+  const password = useController({ control, name: "password" });
+  const confirmPassword = useController({ control, name: "confirmPassword" });
+
   const save = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (values: ProfileFormValues) => {
       // 1. Si hay foto nueva, primero se sube.
       let avatar: string | undefined;
       if (picked) {
@@ -155,14 +175,12 @@ function PerfilForm({ profile }: { profile: Profile }) {
         avatar = url;
       }
 
-      // 2. Y se manda todo en un solo PUT.
+      // 2. Y se manda todo en un solo PUT. La contraseña vacía no se manda.
+      const { confirmPassword: _confirm, password: newPassword, ...fields } = values;
       return updateProfile({
-        nombre: nombre.trim(),
-        apellido: apellido.trim(),
-        email: email.trim(),
-        telefono: telefono.trim(),
+        ...fields,
         ...(avatar ? { avatar } : {}),
-        ...(password ? { password } : {}),
+        ...(newPassword ? { password: newPassword } : {}),
       });
     },
     onSuccess: (updated) => {
@@ -172,109 +190,147 @@ function PerfilForm({ profile }: { profile: Profile }) {
     },
   });
 
-  const validationError = validate({ email, password, confirmPassword });
-
   const errorMessage = save.isError
     ? save.error instanceof ApiError
       ? (save.error.detail ?? save.error.message)
       : "No pudimos guardar tus cambios. Inténtalo de nuevo."
-    : validationError;
+    : undefined;
 
-  const canSave =
-    !save.isPending && !validationError && Boolean(nombre.trim());
+  const passwordToggle = (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={isPasswordVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+      onPress={() => setIsPasswordVisible((visible) => !visible)}
+      className="p-1 active:opacity-60"
+    >
+      <Icon as={isPasswordVisible ? EyeOff : Eye} className="text-slate-400" size={20} />
+    </Pressable>
+  );
 
   return (
     <View className="gap-6 px-4 pt-6">
       {/* Foto */}
       <AvatarInput
         avatarUrl={profile.avatar}
-        name={[nombre, apellido].filter(Boolean).join(" ")}
+        name={[profile.nombre, profile.apellido].filter(Boolean).join(" ")}
         onChange={setPicked}
         disabled={save.isPending}
       />
 
       {/* Datos */}
       <View className="gap-4">
-        <Field label="Nombre">
-          <Input
-            value={nombre}
-            onChangeText={setNombre}
-            placeholder="Tu nombre"
-            autoCapitalize="words"
-            autoComplete="name"
-            editable={!save.isPending}
-            className="h-12 rounded-xl"
-          />
-        </Field>
+        <FormField
+          label="Nombre"
+          icon={User}
+          error={nombre.fieldState.error?.message}
+          inputProps={{
+            value: nombre.field.value,
+            onChangeText: nombre.field.onChange,
+            onBlur: nombre.field.onBlur,
+            nativeID: "profile-nombre",
+            placeholder: "Tu nombre",
+            placeholderTextColor: "#94a3b8",
+            autoCapitalize: "words",
+            autoComplete: "name",
+            editable: !save.isPending,
+          }}
+        />
 
-        <Field label="Apellido">
-          <Input
-            value={apellido}
-            onChangeText={setApellido}
-            placeholder="Tu apellido"
-            autoCapitalize="words"
-            autoComplete="name"
-            editable={!save.isPending}
-            className="h-12 rounded-xl"
-          />
-        </Field>
+        <FormField
+          label="Apellido"
+          icon={UserRound}
+          error={apellido.fieldState.error?.message}
+          inputProps={{
+            value: apellido.field.value,
+            onChangeText: apellido.field.onChange,
+            onBlur: apellido.field.onBlur,
+            nativeID: "profile-apellido",
+            placeholder: "Tu apellido",
+            placeholderTextColor: "#94a3b8",
+            autoCapitalize: "words",
+            autoComplete: "name",
+            editable: !save.isPending,
+          }}
+        />
 
-        <Field label="Correo electrónico">
-          <Input
-            value={email}
-            onChangeText={setEmail}
-            placeholder="correo@ejemplo.com"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-            autoComplete="email"
-            editable={!save.isPending}
-            className="h-12 rounded-xl"
-          />
-        </Field>
+        <FormField
+          label="Correo electrónico"
+          icon={Mail}
+          error={email.fieldState.error?.message}
+          inputProps={{
+            value: email.field.value,
+            onChangeText: email.field.onChange,
+            onBlur: email.field.onBlur,
+            nativeID: "profile-email",
+            placeholder: "correo@ejemplo.com",
+            placeholderTextColor: "#94a3b8",
+            autoCapitalize: "none",
+            autoCorrect: false,
+            keyboardType: "email-address",
+            autoComplete: "email",
+            editable: !save.isPending,
+          }}
+        />
 
-        <Field label="Teléfono">
-          <Input
-            value={telefono}
-            onChangeText={setTelefono}
-            placeholder="33 1234 5678"
-            keyboardType="phone-pad"
-            autoComplete="tel"
-            editable={!save.isPending}
-            className="h-12 rounded-xl"
-          />
-        </Field>
+        <FormField
+          label="Teléfono"
+          icon={Phone}
+          error={telefono.fieldState.error?.message}
+          inputProps={{
+            value: telefono.field.value,
+            onChangeText: telefono.field.onChange,
+            onBlur: telefono.field.onBlur,
+            nativeID: "profile-telefono",
+            placeholder: "3317867062",
+            placeholderTextColor: "#94a3b8",
+            keyboardType: "phone-pad",
+            autoComplete: "tel",
+            editable: !save.isPending,
+          }}
+        />
       </View>
 
       {/* Contraseña */}
       <View className="gap-4">
         <Text className="text-sm font-bold text-slate-800">Contraseña</Text>
 
-        <Field label="Nueva contraseña">
-          <Input
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Dejar vacío para no cambiarla"
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="new-password"
-            editable={!save.isPending}
-            className="h-12 rounded-xl"
-          />
-        </Field>
+        <FormField
+          label="Nueva contraseña"
+          icon={Lock}
+          error={password.fieldState.error?.message}
+          accessory={passwordToggle}
+          inputProps={{
+            value: password.field.value,
+            onChangeText: password.field.onChange,
+            onBlur: password.field.onBlur,
+            nativeID: "profile-password",
+            placeholder: "Dejar vacío para no cambiarla",
+            placeholderTextColor: "#94a3b8",
+            autoCapitalize: "none",
+            autoComplete: "new-password",
+            secureTextEntry: !isPasswordVisible,
+            editable: !save.isPending,
+          }}
+        />
 
-        <Field label="Repetir contraseña">
-          <Input
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Repite la nueva contraseña"
-            secureTextEntry
-            autoCapitalize="none"
-            autoComplete="new-password"
-            editable={!save.isPending}
-            className="h-12 rounded-xl"
-          />
-        </Field>
+        <FormField
+          label="Repetir contraseña"
+          icon={Lock}
+          error={confirmPassword.fieldState.error?.message}
+          accessory={passwordToggle}
+          inputProps={{
+            value: confirmPassword.field.value,
+            onChangeText: confirmPassword.field.onChange,
+            onBlur: confirmPassword.field.onBlur,
+            nativeID: "profile-confirm-password",
+            placeholder: "Repite la nueva contraseña",
+            placeholderTextColor: "#94a3b8",
+            autoCapitalize: "none",
+            autoComplete: "new-password",
+            secureTextEntry: !isPasswordVisible,
+            editable: !save.isPending,
+          }}
+        />
       </View>
 
       {errorMessage ? (
@@ -287,8 +343,8 @@ function PerfilForm({ profile }: { profile: Profile }) {
       ) : null}
 
       <Button
-        onPress={() => save.mutate()}
-        disabled={!canSave}
+        onPress={handleSubmit((values) => save.mutate(values))}
+        disabled={save.isPending}
         className="h-auto rounded-2xl bg-brand-navy py-3.5 active:opacity-80"
       >
         <Text className="text-sm font-semibold tracking-wide text-white">
@@ -297,44 +353,4 @@ function PerfilForm({ profile }: { profile: Profile }) {
       </Button>
     </View>
   );
-}
-
-/** Campo con su etiqueta, como en el formulario de login. */
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View className="gap-1.5">
-      <Label className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-        {label}
-      </Label>
-      {children}
-    </View>
-  );
-}
-
-/** Validaciones de cliente (el backend no las hace). */
-function validate({
-  email,
-  password,
-  confirmPassword,
-}: {
-  email: string;
-  password: string;
-  confirmPassword: string;
-}) {
-  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-    return "El correo no parece válido.";
-  }
-  if (password && password.length < 8) {
-    return "La contraseña necesita al menos 8 caracteres.";
-  }
-  if (password && password !== confirmPassword) {
-    return "Las contraseñas no coinciden.";
-  }
-  return null;
 }

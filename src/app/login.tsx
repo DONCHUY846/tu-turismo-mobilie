@@ -33,9 +33,6 @@ export default function Login() {
   const { reason } = useLocalSearchParams<{ reason?: string }>();
   const sessionExpired = reason === "expired";
 
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-
   const loginMutation = useMutation({
     mutationFn: login,
     onSuccess: (session) => {
@@ -43,12 +40,6 @@ export default function Login() {
       router.replace("/");
     },
   });
-
-  const handleSubmit = () => {
-    if (!email.trim() || !password) return;
-    loginMutation.reset();
-    loginMutation.mutate({ email: email.trim(), password });
-  };
 
   const errorMessage = loginMutation.isError
     ? loginMutation.error instanceof ApiError
@@ -88,11 +79,10 @@ export default function Login() {
         {/* 3. Formulario */}
         <LoginSheet className="mt-4" title="Iniciar sesión">
           <LoginForm
-            email={email}
-            onChangeEmail={setEmail}
-            password={password}
-            onChangePassword={setPassword}
-            onSubmit={handleSubmit}
+            onSubmit={(values) => {
+              loginMutation.reset();
+              loginMutation.mutate(values);
+            }}
             isPending={loginMutation.isPending}
             error={errorMessage}
           />

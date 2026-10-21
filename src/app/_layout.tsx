@@ -63,6 +63,7 @@ function AppGate() {
         {/* Con sesión activa el login no existe: el router vuelve al `anchor`. */}
         <Stack.Protected guard={status === "guest"}>
           <Stack.Screen name="login" />
+          <Stack.Screen name="registro" />
         </Stack.Protected>
       </Stack>
       {/* Requerido por los componentes overlay de react-native-reusables (dialog, popover, etc.). */}

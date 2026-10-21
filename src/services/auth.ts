@@ -1,5 +1,6 @@
 import { requestRefresh, type RefreshResponse } from "@/lib/auth-refresh";
 import { apiRequest } from "@/lib/api";
+import type { RegisterPayload } from "@/lib/validators";
 
 /** Rol del usuario en el backend. */
 export type UserRole = "admin" | "turista";
@@ -48,6 +49,24 @@ export function login({ email, password }: { email: string; password: string }) 
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
+    authenticated: false,
+  });
+}
+
+/**
+ * Alta de usuario. POST /api/v1/core/auth/register/ (responde JSON plano).
+ *
+ * La respuesta es un `LoginResponse` completo: registrarse **inicia sesión**.
+ *
+ * El `rol` va siempre fijo en `"turista"`: el backend acepta el que le mande
+ * el cliente (incluso `"admin"`), así que no se toma de los datos del
+ * formulario.
+ */
+export function register(payload: RegisterPayload) {
+  return apiRequest<LoginResponse>("/core/auth/register/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, rol: "turista" }),
     authenticated: false,
   });
 }
