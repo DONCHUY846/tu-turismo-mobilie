@@ -99,6 +99,7 @@ export type BottomTab = {
 export const BOTTOM_TABS: BottomTab[] = [
   { label: "Inicio", icon: Home, href: "/" },
   { label: "Explorar", icon: Compass, href: "/explorar" },
+  { label: "Mapa", icon: Map, href: "/mapa" },
   { label: "Perfil", icon: UserRound, href: "/perfil" },
 ];
 
