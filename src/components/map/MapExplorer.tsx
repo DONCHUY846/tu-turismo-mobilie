@@ -6,13 +6,24 @@ import { View } from "react-native";
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { SectionErrorState } from "@/components/SectionErrorState";
 import { Icon } from "@/components/ui/icon";
-import { Map, MapControls, MapMarker, MapPopup } from "@/components/ui/mapcn";
+import { Map, MapControls, MapMarker } from "@/components/ui/mapcn";
 import { Text as UIText } from "@/components/ui/text";
+import { useFavoriteToggle } from "@/hooks/useToggleFavorite";
 import { fetchEvents, type Event } from "@/services/events";
+import type { FavoriteTipo } from "@/services/favorites";
 import { fetchPlaces, type Place } from "@/services/places";
 import { fetchRestaurants, type Restaurant } from "@/services/restaurants";
+import { selectIsAuthenticated, useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
+import { RecursoDetailSheet } from "./RecursoDetailSheet";
 import type { MapPoint, MarkerKind } from "./types";
+
+/** tipo de favorito del backend que corresponde a cada kind del mapa */
+const TIPO_POR_KIND: Record<MarkerKind, FavoriteTipo> = {
+  place: "lugar",
+  restaurant: "restaurante",
+  event: "evento",
+};
 
 const KIND_META: Record<MarkerKind, { container: string; icon: LucideIcon }> = {
   place: { container: "bg-blue-500", icon: MapPin },
@@ -26,9 +37,17 @@ const BOUNDS_PADDING = 0.02;
 /** Mapa de exploración: places + restaurants + events como markers con popup. */
 export function MapExplorer() {
   const [selected, setSelected] = React.useState<MapPoint | null>(null);
+  /** visible/point van separadas: el contenido no parpadea en la salida */
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+  /** timeout del cierre; se cancela si se reabre antes de que limpie el punto */
+  const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
   /** error de carga del mapa (tiles/estilo); el reintento remonta el mapa */
   const [mapError, setMapError] = React.useState<string | null>(null);
   const [reloadKey, setReloadKey] = React.useState(0);
+
+  const isAuthenticated = useAuthStore(selectIsAuthenticated);
+  const { isFavorite, toggle, isToggling } = useFavoriteToggle();
 
   const placesQuery = useQuery({
     queryKey: ["map", "places"],
@@ -71,6 +90,32 @@ export function MapExplorer() {
     restaurantsQuery.refetch();
     eventsQuery.refetch();
   };
+
+  /** abre el sheet con un punto, cancelando un cierre aún pendiente de limpiar */
+  const openPoint = (point: MapPoint) => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setSelected(point);
+    setSheetOpen(true);
+  };
+
+  /** cierra el sheet y limpia el punto cuando la salida terminó (~300ms nativo) */
+  const closeSheet = () => {
+    setSheetOpen(false);
+    closeTimer.current = setTimeout(() => {
+      setSelected(null);
+      closeTimer.current = null;
+    }, 400);
+  };
+
+  // el temporizador no debe sobrevivir al componente
+  React.useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current);
+    };
+  }, []);
 
   if (isPending) {
     return (
@@ -120,42 +165,43 @@ export function MapExplorer() {
   }
 
   return (
-    <Map
-      // sin `style`: el provider CARTO resuelve Voyager (claro) / Dark Matter (oscuro).
-      // Hoy el app no tiene paleta oscura (TODO en global.css), así que el mapa
-      // se fija en claro para no mezclar tiles oscuros con UI clara. Al soportar
-      // dark mode, quitar este pin y el basemap alterna solo.
-      key={reloadKey}
-      colorScheme="light"
-      bounds={bounds}
-      attribution={{ position: "bottom-left" }}
-      onError={(error) => {
-        setSelected(null);
-        setMapError(error.message);
-      }}
-    >
-      {points.map((point) => (
-        <MapMarker key={`${point.kind}-${point.id}`} coordinate={point.coordinate} onPress={() => setSelected(point)}>
-          <MarkerBubble kind={point.kind} />
-        </MapMarker>
-      ))}
+    <>
+      <Map
+        // sin `style`: el provider CARTO resuelve Voyager (claro) / Dark Matter (oscuro).
+        // Hoy el app no tiene paleta oscura (TODO en global.css), así que el mapa
+        // se fija en claro para no mezclar tiles oscuros con UI clara. Al soportar
+        // dark mode, quitar este pin y el basemap alterna solo.
+        key={reloadKey}
+        colorScheme="light"
+        bounds={bounds}
+        attribution={{ position: "bottom-left" }}
+        onError={(error) => {
+          setSelected(null);
+          setSheetOpen(false);
+          setMapError(error.message);
+        }}
+      >
+        {points.map((point) => (
+          <MapMarker key={`${point.kind}-${point.id}`} coordinate={point.coordinate} onPress={() => openPoint(point)}>
+            <MarkerBubble kind={point.kind} />
+          </MapMarker>
+        ))}
 
-      {/* Popup hermano del marker (patrón documentado): coordenada explícita. */}
-      {selected ? (
-        <MapPopup coordinate={selected.coordinate} visible onClose={() => setSelected(null)}>
-          <View className="gap-y-1 pr-4">
-            <UIText className="text-sm font-semibold text-foreground">{selected.nombre}</UIText>
-            <UIText className="text-xs text-muted-foreground">{selected.municipio}</UIText>
-            {selected.categoria ? (
-              <UIText className="text-[10px] font-semibold text-brand-cyan">{selected.categoria}</UIText>
-            ) : null}
-            {selected.fecha ? <UIText className="text-xs text-muted-foreground">{selected.fecha}</UIText> : null}
-          </View>
-        </MapPopup>
-      ) : null}
+        <MapControls position="bottom-right" showZoom showLocate />
+      </Map>
 
-      <MapControls position="bottom-right" showZoom showLocate />
-    </Map>
+      <RecursoDetailSheet
+        point={selected}
+        visible={sheetOpen}
+        onClose={closeSheet}
+        canFavorite={isAuthenticated}
+        isFavorite={selected ? isFavorite(selected.id, TIPO_POR_KIND[selected.kind]) : false}
+        onToggleFavorite={() => {
+          if (selected) toggle(selected.id, TIPO_POR_KIND[selected.kind]);
+        }}
+        isToggling={isToggling}
+      />
+    </>
   );
 }
 
@@ -187,9 +233,6 @@ function toPoints<T extends Place | Restaurant | Event>(
       {
         id: item.id,
         kind,
-        nombre: item.nombre,
-        municipio: item.municipio,
-        categoria: item.categoria,
         coordinate: [item.coordenadas.lng, item.coordenadas.lat],
         item,
       },

@@ -9,18 +9,11 @@ export type MarkerKind = "place" | "restaurant" | "event";
  * Un pin del mapa, normalizado entre los tres recursos.
  *
  * `item` es el recurso completo tal cual lo mandó la API: el modal de detalle
- * lo muestra sin fetch extra. `nombre`/`municipio`/`categoria`/`fecha` son el
- * resumen que consumía el popup; se quedan hasta que el sheet los reemplace
- * por completo (Task 4 del plan los quita).
+ * lo muestra sin fetch extra.
  */
 export type MapPoint = {
   id: string;
   kind: MarkerKind;
-  nombre: string;
-  municipio: string;
-  categoria: string;
-  /** solo eventos: rango de fechas ya formateado */
-  fecha?: string;
   /** [lng, lat] */
   coordinate: [number, number];
   item: Place | Restaurant | Event;
