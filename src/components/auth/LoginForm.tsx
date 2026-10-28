@@ -78,7 +78,7 @@ export function LoginForm({ onSubmit, isPending = false, error }: LoginFormProps
           autoCapitalize: "none",
           autoComplete: "current-password",
           returnKeyType: "go",
-          onSubmitEditing: handleSubmit(onSubmit),
+          onSubmitEditing: () => handleSubmit(onSubmit)(),
           secureTextEntry: !isPasswordVisible,
         }}
         accessory={
@@ -118,7 +118,7 @@ export function LoginForm({ onSubmit, isPending = false, error }: LoginFormProps
       {/* Acciones */}
       <View className="gap-y-2.5 pt-1">
         <Button
-          onPress={handleSubmit(onSubmit)}
+          onPress={() => handleSubmit(onSubmit)()}
           disabled={isPending}
           className="h-auto rounded-2xl border border-slate-800 bg-brand-navy py-3.5 shadow-lg shadow-slate-900/15 active:bg-slate-800"
         >

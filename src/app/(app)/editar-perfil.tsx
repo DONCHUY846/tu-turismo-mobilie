@@ -343,7 +343,7 @@ function PerfilForm({ profile }: { profile: Profile }) {
       ) : null}
 
       <Button
-        onPress={handleSubmit((values) => save.mutate(values))}
+        onPress={() => handleSubmit((values) => save.mutate(values))()}
         disabled={save.isPending}
         className="h-auto rounded-2xl bg-brand-navy py-3.5 active:opacity-80"
       >

@@ -171,7 +171,7 @@ export function RegisterForm({ onSubmit, isPending = false, error }: RegisterFor
           autoComplete: "new-password",
           secureTextEntry: !isPasswordVisible,
           returnKeyType: "go",
-          onSubmitEditing: handleSubmit(onSubmit),
+          onSubmitEditing: () => handleSubmit(onSubmit)(),
         }}
       />
 
@@ -182,7 +182,7 @@ export function RegisterForm({ onSubmit, isPending = false, error }: RegisterFor
       ) : null}
 
       <Button
-        onPress={handleSubmit(onSubmit)}
+        onPress={() => handleSubmit(onSubmit)()}
         disabled={isPending}
         className="h-auto rounded-2xl border border-slate-800 bg-brand-navy py-3.5 shadow-lg shadow-slate-900/15 active:bg-slate-800"
       >

@@ -1,4 +1,4 @@
-import { DefaultTheme, type Theme } from "expo-router/react-navigation";
+import { DefaultTheme, type Theme } from "expo-router";
 
 /**
  * Tokens de la marca en HSL, espejo de `global.css` para poder usarlos

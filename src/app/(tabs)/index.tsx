@@ -1,5 +1,10 @@
 import * as React from "react";
-import { ScrollView, View, type LayoutChangeEvent } from "react-native";
+import {
+  ScrollView,
+  View,
+  type LayoutChangeEvent,
+  type ScrollViewInstance,
+} from "react-native";
 
 import { AppFooter } from "@/components/AppFooter";
 import { AppHeader } from "@/components/AppHeader";
@@ -36,7 +41,7 @@ import {
  * La barra de navegación inferior la dibuja el layout `(tabs)/_layout.tsx`.
  */
 export default function Index() {
-  const scrollRef = React.useRef<ScrollView>(null);
+  const scrollRef = React.useRef<ScrollViewInstance>(null);
   /**
    * Posición de cada sección dentro del contenido del scroll, para que los
    * anclas del footer (`#lugares`, `#eventos`, `#restaurantes`) bajen justo ahí.

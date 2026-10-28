@@ -8,7 +8,7 @@ import { BOTTOM_TABS } from "@/data/home";
  * Tab bar del layout `(tabs)`: traduce las rutas del navegador de tabs a
  * nuestro `BottomTabBar` presentacional (iconos de lucide y colores de marca).
  */
-export function AppTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
+export function AppTabBar({ state, descriptors, emitter, navigateToTab, insets }: BottomTabBarProps) {
   const tabs: BottomTabItem[] = state.routes.map((route) => {
     const fromData = BOTTOM_TABS.find((tab) => tab.href === hrefForRoute(route.name));
     const options = descriptors[route.key]?.options;
@@ -30,12 +30,12 @@ export function AppTabBar({ state, descriptors, navigation, insets }: BottomTabB
         const route = state.routes.find((item) => hrefForRoute(item.name) === tab.href);
         if (!route) return;
 
-        const event = navigation.emit({
+        const event = emitter.emit({
           type: "tabPress",
           target: route.key,
           canPreventDefault: true,
         });
-        if (!event.defaultPrevented) navigation.navigate(route.name);
+        if (!event.defaultPrevented) navigateToTab(route.key);
       }}
     />
   );
