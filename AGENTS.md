@@ -26,7 +26,7 @@ Run lint and typecheck before declaring any task done.
 ## Navigation & Routing
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Estructura actual: `src/app/(tabs)/` (Inicio, Explorar, Perfil) con la barra inferior propia vía `tabBar` en `(tabs)/_layout.tsx`; `login.tsx` vive en el Stack raíz para que no herede las pestañas. El grupo `(tabs)` no aparece en la URL: `(tabs)/index.tsx` sigue siendo `/`.
+- Estructura actual: `src/app/(tabs)/` (Inicio, Explorar, Mapa, Perfil) con la barra inferior propia vía `tabBar` en `(tabs)/_layout.tsx`; `login.tsx` vive en el Stack raíz para que no herede las pestañas. El grupo `(tabs)` no aparece en la URL: `(tabs)/index.tsx` sigue siendo `/`.
 - Rutas privadas: `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}` (ver `(app)/_layout.tsx`) y registrado en el Stack raíz con `<Stack.Screen name="(app)" />`. El grupo tampoco aparece en la URL: `(app)/editar-perfil.tsx` es `/editar-perfil`.
 - La barra de navegación usa **JS tabs** (`expo-router/tabs`) y no native tabs, para conservar los íconos de lucide y los colores de marca. `AppTabBar` (`src/components/navigation/`) adapta las rutas del navegador a `BottomTabBar`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
@@ -57,11 +57,27 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 - `className` solo funciona en los componentes que NativeWind registra por interop: los de `react-native` (`View`, `Text`, `Image`, `Pressable`, `ScrollView`, `FlatList`…) y `SafeAreaView`. **En `expo-image` no aplica**: envuélvelo en un `View` con clases y pásale las dimensiones por `style={{ width: "100%", height: "100%" }}`.
 - Al agregar un componente que use overlays (dialog, popover, tooltip, dropdown), `PortalHost` en `src/app/_layout.tsx` es obligatorio.
 
+## Componentes de mapa: mapcn-rn
+
+El mapa de exploración usa **mapcn-rn** (copy-owned, mismo espíritu que reusables) sobre `@maplibre/maplibre-react-native` con basemap CARTO (no requiere API key). Se instala con `npx mapcn-rn init` y los componentes con `npx mapcn-rn add <componente>` (`map`, `marker`, `popup`, `controls`, `geojson`…). `mapcn.json` guarda renderer/provider y los hashes del vendido; `npx mapcn-rn doctor` verifica la instalación y `npx mapcn-rn diff` las divergencias locales.
+
+- **Nunca escribas a mano ni edites `src/components/ui/mapcn/` ni `src/lib/mapcn/`** (rompes los hashes del registry). La única excepción es la divergencia documentada abajo.
+- **Divergencia local en `map.tsx`**: el vendido no cablea `onDidFailLoadingMap` → `onError` (un mapa sin red quedaría en blanco silencioso); aquí sí. `mapcn-rn diff` lo marca *"modified since install"* — si un futuro `mapcn-rn add` lo sobrescribe, re-aplica el cable.
+- `MapExplorer` (`src/components/map/`) pide places/restaurants/events con `?limit=100` (misma terna que el mapa web) y normaliza todo a puntos de mapa. Filtra `coordenadas: null` y `activo: false` **antes de renderizar**; nunca asumas lat/lng.
+- Markers por tipo: MapPin `bg-blue-500` (lugares), Utensils `bg-amber-500` (restaurantes), CalendarDays `bg-violet-500` (eventos). El popup va hermano del marker, con coordenada explícita.
+- Cámara: se encuadra con `bounds` de los pins reales (+ padding 0.02°). `bounds` y `defaultViewport.center` son **mutuamente excluyentes** en el contrato del `Map` — no pases ambos.
+- El mapa está fijado en claro (`colorScheme="light"`): `global.css` aún no tiene paleta oscura (TODO en `.dark:root`). Al soportar dark mode, quita el pin y el basemap alterna solo (CARTO resuelve Voyager/Dark Matter).
+- El ornamento `attribution={{ position: "bottom-left" }}` es requisito legal del basemap CARTO/OSM — no lo quites.
+- Estados: skeleton (CardSkeleton) mientras cargan los 3 recursos, `SectionErrorState` si fallan los tres **o** si el mapa no carga (tiles/estilo; el reintento remonta el `Map` cambiando su `key`), y texto de vacío si no hay puntos con coordenadas. Un solo recurso fallando ⇒ se muestran los otros dos.
+- Rendimiento: hasta ~300 `MapMarker` nativos pueden laggear en Android; mapcn recomienda capas GeoJSON arriba de ~100. Si el teléfono lo sufre: `npx mapcn-rn add geojson` y migrar los puntos a la capa.
+- **Requiere dev build** (MapLibre no viene en Expo Go): `eas.json` ya tiene el perfil `development` (APK Android, proyecto EAS `donchuy846/tu-turismo-mobile` ya linkeado). Probar en teléfono: `npx eas-cli@latest build --profile development --platform android`, instalar el APK y conectar con `npx expo start --tunnel --dev-client`.
+- Lint: `@typescript-eslint/array-type` está apagada para los paths vendidos en `eslint.config.js` (los warnings eran del CLI, no del app).
+
 ## Datos, estado y caché
 
 - `src/lib/api.ts` — cliente HTTP: `apiFetch<T>()` (desenvuelve el sobre `{ success, data }`) y `apiRequest<T>()` (JSON plano). `API_URL` vive en `src/lib/config.ts` (de `EXPO_PUBLIC_API_URL`, ver `.env.example`). Todo fetch pasa por aquí, y el transporte también se encarga del token de sesión (ver **Autenticación**).
   - El `Content-Type: application/json` solo se pone si el body es un **string**. Con un `FormData` (subida de imágenes) el `fetch` debe poner el `boundary`; si el transporte lo fuerza, la subida se manda con un tipo que no corresponde.
-- `src/services/<recurso>.ts` — un archivo por recurso del backend (`places.ts`, más adelante `events.ts`, `restaurants.ts`): tipos del dominio + funciones `fetchX(params)`. Los tipos reflejan lo que la API devuelve hoy; no inventes campos.
+- `src/services/<recurso>.ts` — un archivo por recurso del backend (`places.ts`, `events.ts`, `restaurants.ts`): tipos del dominio + funciones `fetchX(params)`. Los tipos reflejan lo que la API devuelve hoy; no inventes campos.
 - `QueryClientProvider` vive en `src/app/_layout.tsx`. Los datos se piden siempre con `useQuery` y una `queryKey` que incluya **todos** los filtros del store.
 - Estados obligatorios en cada lista: **carga** (skeletons, no spinners), **error** (mensaje + reintentar con `refetch`) y **vacío**.
 - `src/stores/` — estado global con Zustand (`usePlacesStore` con los filtros de lugares). Los datos del servidor **no** se guardan ahí, para eso está la caché de TanStack Query.
