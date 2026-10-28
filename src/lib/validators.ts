@@ -86,3 +86,38 @@ export const profileSchema = z
   });
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
+
+/**
+ * Recuperación de contraseña, paso 1: el correo al que se manda el código.
+ *
+ * Reutiliza la regla del correo del login para que la normalización
+ * (recortar, minúsculas) viva en un solo lugar.
+ */
+export const forgotPasswordEmailSchema = z.object({
+  email: loginSchema.shape.email,
+});
+
+export type ForgotPasswordEmailValues = z.infer<typeof forgotPasswordEmailSchema>;
+
+/** Recuperación, paso 2: el código que llegó al correo. */
+export const forgotPasswordCodeSchema = z.object({
+  code: z.string().trim().min(1, "Escribe el código que recibiste."),
+});
+
+export type ForgotPasswordCodeValues = z.infer<typeof forgotPasswordCodeSchema>;
+
+/**
+ * Recuperación, paso 3: la contraseña nueva, con las mismas reglas que el
+ * alta (mínimo 8) y su confirmación.
+ */
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(8, "La contraseña necesita al menos 8 caracteres."),
+    confirmPassword: z.string().min(1, "Repite la contraseña."),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;

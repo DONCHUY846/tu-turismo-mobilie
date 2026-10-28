@@ -98,8 +98,11 @@ export function LoginForm({ onSubmit, isPending = false, error }: LoginFormProps
       />
 
       <View className="flex-row items-center justify-end">
-        {/* TODO: el backend no expone recuperación de contraseña. */}
-        <Pressable accessibilityRole="link" onPress={() => {}} className="active:opacity-70">
+        <Pressable
+          accessibilityRole="link"
+          onPress={() => router.push("/recuperar-contrasena")}
+          className="active:opacity-70"
+        >
           <Text className="text-xs font-medium text-brand-terracotta">
             ¿Olvidaste tu contraseña?
           </Text>

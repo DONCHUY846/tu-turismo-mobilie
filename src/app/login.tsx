@@ -47,7 +47,9 @@ export default function Login() {
       : "No pudimos iniciar sesión. Inténtalo de nuevo."
     : sessionExpired
       ? "Tu sesión expiró. Vuelve a iniciar sesión."
-      : undefined;
+      : reason === "password-reset"
+        ? "Tu contraseña se restableció. Inicia sesión con la nueva."
+        : undefined;
 
   return (
     <KeyboardAvoidingView

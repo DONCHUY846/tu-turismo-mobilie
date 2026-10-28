@@ -29,10 +29,14 @@ export class ApiError extends Error {
   }
 }
 
-/** Cuerpo de error del backend: `{ error, detail }`. */
+/**
+ * Cuerpo de error del backend. Las rutas de core usan `{ error, detail }`; las
+ * de recuperación de contraseña, `{ success, message }`.
+ */
 type ApiErrorEnvelope = {
   error?: string;
   detail?: string;
+  message?: string;
 };
 
 type ApiEnvelope<T> = {
@@ -173,7 +177,7 @@ async function request<T>(
     let detail: string | undefined;
     try {
       const payload = (await response.json()) as ApiErrorEnvelope;
-      detail = payload.detail ?? payload.error;
+      detail = payload.detail ?? payload.error ?? payload.message;
     } catch {
       // algunos gateways devuelven HTML (ej. el reto de Cloudflare)
     }

@@ -64,6 +64,7 @@ function AppGate() {
         <Stack.Protected guard={status === "guest"}>
           <Stack.Screen name="login" />
           <Stack.Screen name="registro" />
+          <Stack.Screen name="recuperar-contrasena" />
         </Stack.Protected>
       </Stack>
       {/* Requerido por los componentes overlay de react-native-reusables (dialog, popover, etc.). */}

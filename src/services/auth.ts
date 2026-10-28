@@ -173,3 +173,70 @@ export function extractUploadUrl(payload: UploadResponse): string | null {
     null
   );
 }
+
+/** Respuesta de los endpoints de recuperación de contraseña. */
+export type PasswordRecoveryResponse = {
+  success?: boolean;
+  /** p. ej. "El código es incorrecto o ya fue utilizado." */
+  message?: string;
+};
+
+/**
+ * Primer paso de la recuperación: manda el código al correo del usuario.
+ * POST /api/v1/auth/password/send-code/
+ *
+ * La ruta vive en `auth/` (no en `core/auth/` como el resto) y responde
+ * plano. Con un correo no registrado responde 404 con el mensaje en
+ * `message`, que el transporte ya sube como `detail` del `ApiError`.
+ */
+export function sendPasswordCode(email: string) {
+  return apiRequest<PasswordRecoveryResponse>("/auth/password/send-code/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+    authenticated: false,
+  });
+}
+
+/**
+ * Segundo paso: verifica el código que llegó al correo.
+ * POST /api/v1/auth/password/verify-code/
+ */
+export function verifyPasswordCode({
+  email,
+  code,
+}: {
+  email: string;
+  code: string;
+}) {
+  return apiRequest<PasswordRecoveryResponse>("/auth/password/verify-code/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code }),
+    authenticated: false,
+  });
+}
+
+/**
+ * Último paso: fija la contraseña nueva con el código verificado.
+ * POST /api/v1/auth/password/reset/
+ *
+ * El código viaja en el payload: la ruta lo valida de nuevo (y el backend
+ * marca los códigos como "ya fue utilizado" al usarlos).
+ */
+export function resetPassword({
+  email,
+  code,
+  password,
+}: {
+  email: string;
+  code: string;
+  password: string;
+}) {
+  return apiRequest<PasswordRecoveryResponse>("/auth/password/reset/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code, password }),
+    authenticated: false,
+  });
+}
