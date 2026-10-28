@@ -5,8 +5,8 @@ import { MapExplorer } from "@/components/map/MapExplorer";
 
 /**
  * Pantalla "Mapa" (pestaña 3): mapa nativo (mapcn-rn + MapLibre/CARTO) con
- * markers de places, restaurants y events. TODO: al existir las rutas de
- * detalle, el popup agrega el botón "Ver detalle".
+ * markers de places, restaurants y events; presionar un marker abre el modal
+ * de detalle (con favorito) y los chips filtran por tipo de recurso.
  */
 export default function Mapa() {
   return (

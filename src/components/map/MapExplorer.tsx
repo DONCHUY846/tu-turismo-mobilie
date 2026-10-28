@@ -1,12 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
-import { CalendarDays, MapPin, Utensils, type LucideIcon } from "lucide-react-native";
 import * as React from "react";
 import { View } from "react-native";
 
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { SectionErrorState } from "@/components/SectionErrorState";
 import { Icon } from "@/components/ui/icon";
-import { Map, MapControls, MapMarker } from "@/components/ui/mapcn";
+import { Map, MapControls, MapMarker, type MapInstance } from "@/components/ui/mapcn";
 import { Text as UIText } from "@/components/ui/text";
 import { useFavoriteToggle } from "@/hooks/useToggleFavorite";
 import { fetchEvents, type Event } from "@/services/events";
@@ -16,7 +15,8 @@ import { fetchRestaurants, type Restaurant } from "@/services/restaurants";
 import { selectIsAuthenticated, useAuthStore } from "@/stores/auth-store";
 import { cn } from "@/lib/utils";
 import { RecursoDetailSheet } from "./RecursoDetailSheet";
-import type { MapPoint, MarkerKind } from "./types";
+import { MapFilterChips, type MapFilter } from "./MapFilterChips";
+import { KIND_META, type MapPoint, type MarkerKind } from "./types";
 
 /** tipo de favorito del backend que corresponde a cada kind del mapa */
 const TIPO_POR_KIND: Record<MarkerKind, FavoriteTipo> = {
@@ -25,22 +25,22 @@ const TIPO_POR_KIND: Record<MarkerKind, FavoriteTipo> = {
   event: "evento",
 };
 
-const KIND_META: Record<MarkerKind, { container: string; icon: LucideIcon }> = {
-  place: { container: "bg-blue-500", icon: MapPin },
-  restaurant: { container: "bg-amber-500", icon: Utensils },
-  event: { container: "bg-violet-500", icon: CalendarDays },
-};
-
 /** margen (grados) al calcular los bounds para que ningún pin quede al borde */
 const BOUNDS_PADDING = 0.02;
 
-/** Mapa de exploración: places + restaurants + events como markers con popup. */
+/** Mapa de exploración: places + restaurants + events con modal de detalle y chips de filtro. */
 export function MapExplorer() {
   const [selected, setSelected] = React.useState<MapPoint | null>(null);
   /** visible/point van separadas: el contenido no parpadea en la salida */
   const [sheetOpen, setSheetOpen] = React.useState(false);
   /** timeout del cierre; se cancela si se reabre antes de que limpie el punto */
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** filtro activo de los chips ("todos" por defecto) */
+  const [filter, setFilter] = React.useState<MapFilter>("all");
+  /** `true` cuando el mapa terminó de cargar: habilita el re-encuadre por fitBounds */
+  const [mapReady, setMapReady] = React.useState(false);
+  const mapRef = React.useRef<MapInstance>(null);
 
   /** error de carga del mapa (tiles/estilo); el reintento remonta el mapa */
   const [mapError, setMapError] = React.useState<string | null>(null);
@@ -72,18 +72,25 @@ export function MapExplorer() {
     return [...placePoints, ...restaurantPoints, ...eventPoints];
   }, [placesQuery.data, restaurantsQuery.data, eventsQuery.data]);
 
+  /** pins visibles según el filtro activo (client-side sobre la caché) */
+  const filteredPoints = React.useMemo<MapPoint[]>(
+    () => (filter === "all" ? points : points.filter((point) => point.kind === filter)),
+    [filter, points]
+  );
+
+  /** conteo por filtro para las píldoras */
+  const counts = React.useMemo<Record<MapFilter, number>>(
+    () => ({
+      all: points.length,
+      place: points.filter((point) => point.kind === "place").length,
+      restaurant: points.filter((point) => point.kind === "restaurant").length,
+      event: points.filter((point) => point.kind === "event").length,
+    }),
+    [points]
+  );
+
   /** bounds inicial que abarca todos los pins (evita cámara fija en el centro). */
-  const bounds = React.useMemo<[number, number, number, number] | undefined>(() => {
-    if (points.length === 0) return undefined;
-    const lngs = points.map((point) => point.coordinate[0]);
-    const lats = points.map((point) => point.coordinate[1]);
-    return [
-      Math.min(...lngs) - BOUNDS_PADDING,
-      Math.min(...lats) - BOUNDS_PADDING,
-      Math.max(...lngs) + BOUNDS_PADDING,
-      Math.max(...lats) + BOUNDS_PADDING,
-    ];
-  }, [points]);
+  const bounds = React.useMemo(() => boundsFrom(points), [points]);
 
   const retryAll = () => {
     placesQuery.refetch();
@@ -116,6 +123,16 @@ export function MapExplorer() {
       if (closeTimer.current) clearTimeout(closeTimer.current);
     };
   }, []);
+
+  // Re-encuadre animado: al cambiar el filtro (o al terminar de cargar el
+  // mapa) la cámara vuela a los pins visibles. Si el filtro queda sin pins
+  // con coordenadas NO se mueve: aparece la tarjeta de vacío (Review Focus 5).
+  React.useEffect(() => {
+    if (!mapReady) return;
+    const nextBounds = boundsFrom(filteredPoints);
+    if (!nextBounds) return;
+    mapRef.current?.fitBounds(nextBounds, { duration: 600, easing: "fly" });
+  }, [filter, mapReady, filteredPoints]);
 
   if (isPending) {
     return (
@@ -158,14 +175,21 @@ export function MapExplorer() {
           onRetry={() => {
             setMapError(null);
             setReloadKey((key) => key + 1);
+            // el remonte dispara onLoad de nuevo y re-encuadra al filtro activo
+            setMapReady(false);
           }}
         />
       </View>
     );
   }
 
+  /** texto de la tarjeta cuando el filtro activo no tiene pins con coordenadas */
+  const emptyLabel = filter === "all" ? "recursos" : KIND_META[filter].label.toLowerCase();
+
   return (
-    <>
+    <View className="flex-1">
+      <MapFilterChips value={filter} onChange={setFilter} counts={counts} />
+
       <Map
         // sin `style`: el provider CARTO resuelve Voyager (claro) / Dark Matter (oscuro).
         // Hoy el app no tiene paleta oscura (TODO en global.css), así que el mapa
@@ -175,13 +199,15 @@ export function MapExplorer() {
         colorScheme="light"
         bounds={bounds}
         attribution={{ position: "bottom-left" }}
+        ref={mapRef}
+        onLoad={() => setMapReady(true)}
         onError={(error) => {
           setSelected(null);
           setSheetOpen(false);
           setMapError(error.message);
         }}
       >
-        {points.map((point) => (
+        {filteredPoints.map((point) => (
           <MapMarker key={`${point.kind}-${point.id}`} coordinate={point.coordinate} onPress={() => openPoint(point)}>
             <MarkerBubble kind={point.kind} />
           </MapMarker>
@@ -189,6 +215,16 @@ export function MapExplorer() {
 
         <MapControls position="bottom-right" showZoom showLocate />
       </Map>
+
+      {/* Filtro sin pins con coordenadas: la cámara no se mueve, se avisa aquí.
+          Va hermana del Map (los children del Map son anotaciones nativas). */}
+      {filteredPoints.length === 0 ? (
+        <View className="absolute bottom-24 left-4 right-24 rounded-2xl border border-border bg-card px-4 py-3 shadow-md">
+          <UIText className="text-xs text-muted-foreground">
+            No hay {emptyLabel} con ubicación en el mapa.
+          </UIText>
+        </View>
+      ) : null}
 
       <RecursoDetailSheet
         point={selected}
@@ -201,7 +237,7 @@ export function MapExplorer() {
         }}
         isToggling={isToggling}
       />
-    </>
+    </View>
   );
 }
 
@@ -216,6 +252,22 @@ function MarkerBubble({ kind }: { kind: MarkerKind }) {
       <Icon as={meta.icon} size={14} className="text-white" />
     </View>
   );
+}
+
+/**
+ * Bounds que abarcan todos los pins de la lista (`undefined` si está vacía).
+ * Mismo padding que el encuadre inicial para que ningún pin quede al borde.
+ */
+function boundsFrom(list: MapPoint[]): [number, number, number, number] | undefined {
+  if (list.length === 0) return undefined;
+  const lngs = list.map((point) => point.coordinate[0]);
+  const lats = list.map((point) => point.coordinate[1]);
+  return [
+    Math.min(...lngs) - BOUNDS_PADDING,
+    Math.min(...lats) - BOUNDS_PADDING,
+    Math.max(...lngs) + BOUNDS_PADDING,
+    Math.max(...lats) + BOUNDS_PADDING,
+  ];
 }
 
 /**
