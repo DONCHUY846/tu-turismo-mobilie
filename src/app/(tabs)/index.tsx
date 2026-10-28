@@ -11,6 +11,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { CategoryCard, CategoryGrid } from "@/components/CategoryCard";
 import { FeaturedPlaces } from "@/components/FeaturedPlaces";
 import { HeroBanner } from "@/components/HeroBanner";
+import { HomeMenuDrawer, type HomeMenuLink } from "@/components/HomeMenuDrawer";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { RecommendedRestaurants } from "@/components/RecommendedRestaurants";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -21,6 +22,7 @@ import {
   FOOTER_QUICK_LINKS,
   HERO,
   HOME_CATEGORIES,
+  HOME_MENU_LINKS,
 } from "@/data/home";
 
 /**
@@ -43,8 +45,9 @@ import {
 export default function Index() {
   const scrollRef = React.useRef<ScrollViewInstance>(null);
   /**
-   * Posición de cada sección dentro del contenido del scroll, para que los
-   * anclas del footer (`#lugares`, `#eventos`, `#restaurantes`) bajen justo ahí.
+   * Posición de cada sección dentro del contenido del scroll, para que las
+   * anclas del menú y del footer (`#categorias`, `#lugares`, `#eventos`,
+   * `#restaurantes`) bajen justo ahí.
    *
    * Las secciones son hijas directas del `ScrollView`, así que el `y` del
    * `onLayout` ya es la posición en el contenido (sin offsets ni sumas).
@@ -64,13 +67,25 @@ export default function Index() {
     scrollRef.current?.scrollTo({ y, animated: true });
   }, []);
 
+  /** Menú del header: panel lateral con accesos a las secciones de la home. */
+  const [menuVisible, setMenuVisible] = React.useState(false);
+
+  const handleMenuSelect = React.useCallback(
+    (item: HomeMenuLink) => {
+      setMenuVisible(false);
+      if (item.anchor === "#top") {
+        scrollRef.current?.scrollTo({ y: 0, animated: true });
+        return;
+      }
+      scrollToAnchor(item.anchor);
+    },
+    [scrollToAnchor]
+  );
+
   return (
     <View className="flex-1 bg-background">
       {/* 1. Barra superior fija con el logotipo de la marca y el acceso al menú. */}
-      <AppHeader
-        // TODO: abrir el menú lateral cuando exista.
-        onPressMenu={() => {}}
-      />
+      <AppHeader onPressMenu={() => setMenuVisible(true)} />
 
       {/* 2. Aviso de falta de conexión: aparece y desaparece según el estado real de red. */}
       <OfflineBanner />
@@ -93,7 +108,7 @@ export default function Index() {
         />
 
         {/* 4 + 5. Categorías: acceso rápido a cada tipo de contenido. */}
-        <View className="mt-8 px-4">
+        <View className="mt-8 px-4" onLayout={measureSection("categorias")}>
           <SectionHeader
             align="center"
             title="Explora por Categoría"
@@ -145,6 +160,14 @@ export default function Index() {
           onPressAnchor={scrollToAnchor}
         />
       </ScrollView>
+
+      {/* Menú del header: accesos directos a las secciones de esta pantalla. */}
+      <HomeMenuDrawer
+        visible={menuVisible}
+        items={HOME_MENU_LINKS}
+        onClose={() => setMenuVisible(false)}
+        onSelect={handleMenuSelect}
+      />
     </View>
   );
 }

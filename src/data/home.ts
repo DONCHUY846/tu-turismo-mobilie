@@ -12,6 +12,7 @@ import {
   UserRound,
 } from "lucide-react-native";
 
+import type { HomeMenuLink } from "@/components/HomeMenuDrawer";
 import type { IconTone } from "@/components/IconTile";
 
 /** Categoría del grid "Explora por Categoría". */
@@ -55,6 +56,23 @@ export const FOOTER_QUICK_LINKS: FooterLink[] = [
   { label: "Próximos Eventos", href: "#eventos" },
   { label: "Restaurantes Recomendados", href: "#restaurantes" },
   { label: "Tours Guiados" },
+];
+
+/**
+ * Botones del menú del header (HomeMenuDrawer): saltan a las secciones de la
+ * propia home, igual que los enlaces de ancla del footer. `#top` vuelve arriba.
+ */
+export const HOME_MENU_LINKS: HomeMenuLink[] = [
+  { key: "inicio", label: "Inicio", icon: Home, anchor: "#top" },
+  { key: "categorias", label: "Explora por Categoría", icon: Compass, anchor: "#categorias" },
+  { key: "lugares", label: "Lugares Destacados", icon: Map, anchor: "#lugares" },
+  { key: "eventos", label: "Próximos Eventos", icon: CalendarDays, anchor: "#eventos" },
+  {
+    key: "restaurantes",
+    label: "Restaurantes Recomendados",
+    icon: Utensils,
+    anchor: "#restaurantes",
+  },
 ];
 
 export const FOOTER_INFO_LINKS: FooterLink[] = [
