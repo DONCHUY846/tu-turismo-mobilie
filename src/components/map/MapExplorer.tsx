@@ -8,15 +8,15 @@ import { Icon } from "@/components/ui/icon";
 import { Map, MapControls, MapMarker, type MapInstance } from "@/components/ui/mapcn";
 import { Text as UIText } from "@/components/ui/text";
 import { useFavoriteToggle } from "@/hooks/useToggleFavorite";
+import { cn } from "@/lib/utils";
 import { fetchEvents, type Event } from "@/services/events";
 import type { FavoriteTipo } from "@/services/favorites";
 import { fetchPlaces, type Place } from "@/services/places";
 import { fetchRestaurants, type Restaurant } from "@/services/restaurants";
 import { selectIsAuthenticated, useAuthStore } from "@/stores/auth-store";
-import { cn } from "@/lib/utils";
+import { MapCategoryRail } from "./MapCategoryRail";
 import { RecursoDetailSheet } from "./RecursoDetailSheet";
-import { MapFilterChips, type MapFilter } from "./MapFilterChips";
-import { KIND_META, type MapPoint, type MarkerKind } from "./types";
+import { KIND_META, RAIL_META, type MapFilter, type MapPoint, type MarkerKind } from "./types";
 
 /** tipo de favorito del backend que corresponde a cada kind del mapa */
 const TIPO_POR_KIND: Record<MarkerKind, FavoriteTipo> = {
@@ -28,7 +28,7 @@ const TIPO_POR_KIND: Record<MarkerKind, FavoriteTipo> = {
 /** margen (grados) al calcular los bounds para que ningún pin quede al borde */
 const BOUNDS_PADDING = 0.02;
 
-/** Mapa de exploración: places + restaurants + events con modal de detalle y chips de filtro. */
+/** Mapa de exploración a cuerpo completo con rail flotante de categorías y modal de detalle. */
 export function MapExplorer() {
   const [selected, setSelected] = React.useState<MapPoint | null>(null);
   /** visible/point van separadas: el contenido no parpadea en la salida */
@@ -36,7 +36,7 @@ export function MapExplorer() {
   /** timeout del cierre; se cancela si se reabre antes de que limpie el punto */
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /** filtro activo de los chips ("todos" por defecto) */
+  /** filtro activo del rail ("all" por defecto) */
   const [filter, setFilter] = React.useState<MapFilter>("all");
   /** `true` cuando el mapa terminó de cargar: habilita el re-encuadre por fitBounds */
   const [mapReady, setMapReady] = React.useState(false);
@@ -48,6 +48,9 @@ export function MapExplorer() {
 
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
   const { isFavorite, toggle, isToggling, toggleError } = useFavoriteToggle();
+
+  /** si el usuario no tiene sesión, el filtro "favorites" cae a "all" */
+  const effectiveFilter: MapFilter = !isAuthenticated && filter === "favorites" ? "all" : filter;
 
   const placesQuery = useQuery({
     queryKey: ["map", "places"],
@@ -72,22 +75,14 @@ export function MapExplorer() {
     return [...placePoints, ...restaurantPoints, ...eventPoints];
   }, [placesQuery.data, restaurantsQuery.data, eventsQuery.data]);
 
-  /** pins visibles según el filtro activo (client-side sobre la caché) */
-  const filteredPoints = React.useMemo<MapPoint[]>(
-    () => (filter === "all" ? points : points.filter((point) => point.kind === filter)),
-    [filter, points]
-  );
-
-  /** conteo por filtro para las píldoras */
-  const counts = React.useMemo<Record<MapFilter, number>>(
-    () => ({
-      all: points.length,
-      place: points.filter((point) => point.kind === "place").length,
-      restaurant: points.filter((point) => point.kind === "restaurant").length,
-      event: points.filter((point) => point.kind === "event").length,
-    }),
-    [points]
-  );
+  /** pins visibles según el filtro activo del rail (client-side sobre la caché) */
+  const filteredPoints = React.useMemo<MapPoint[]>(() => {
+    if (effectiveFilter === "all") return points;
+    if (effectiveFilter === "favorites") {
+      return points.filter((point) => isFavorite(point.id, TIPO_POR_KIND[point.kind]));
+    }
+    return points.filter((point) => point.kind === effectiveFilter);
+  }, [effectiveFilter, isFavorite, points]);
 
   /** bounds inicial que abarca todos los pins (evita cámara fija en el centro). */
   const bounds = React.useMemo(() => boundsFrom(points), [points]);
@@ -132,7 +127,7 @@ export function MapExplorer() {
     const nextBounds = boundsFrom(filteredPoints);
     if (!nextBounds) return;
     mapRef.current?.fitBounds(nextBounds, { duration: 600, easing: "fly" });
-  }, [filter, mapReady, filteredPoints]);
+  }, [effectiveFilter, mapReady, filteredPoints]);
 
   if (isPending) {
     return (
@@ -184,12 +179,11 @@ export function MapExplorer() {
   }
 
   /** texto de la tarjeta cuando el filtro activo no tiene pins con coordenadas */
-  const emptyLabel = filter === "all" ? "recursos" : KIND_META[filter].label.toLowerCase();
+  const emptyLabel =
+    effectiveFilter === "all" ? "recursos" : RAIL_META[effectiveFilter].label.toLowerCase();
 
   return (
-    <View className="flex-1">
-      <MapFilterChips value={filter} onChange={setFilter} counts={counts} />
-
+    <View className="relative flex-1">
       <Map
         // sin `style`: el provider CARTO resuelve Voyager (claro) / Dark Matter (oscuro).
         // Hoy el app no tiene paleta oscura (TODO en global.css), así que el mapa
@@ -208,7 +202,11 @@ export function MapExplorer() {
         }}
       >
         {filteredPoints.map((point) => (
-          <MapMarker key={`${point.kind}-${point.id}`} coordinate={point.coordinate} onPress={() => openPoint(point)}>
+          <MapMarker
+            key={`${point.kind}-${point.id}`}
+            coordinate={point.coordinate}
+            onPress={() => openPoint(point)}
+          >
             <MarkerBubble kind={point.kind} />
           </MapMarker>
         ))}
@@ -216,10 +214,17 @@ export function MapExplorer() {
         <MapControls position="bottom-right" showZoom showLocate />
       </Map>
 
+      {/* Rail vertical flotante a la izquierda sobre el mapa (no parte la pantalla) */}
+      <MapCategoryRail
+        value={effectiveFilter}
+        onChange={setFilter}
+        showFavorites={isAuthenticated}
+      />
+
       {/* Filtro sin pins con coordenadas: la cámara no se mueve, se avisa aquí.
           Va hermana del Map (los children del Map son anotaciones nativas). */}
       {filteredPoints.length === 0 ? (
-        <View className="absolute bottom-24 left-4 right-24 rounded-2xl border border-border bg-card px-4 py-3 shadow-md">
+        <View className="absolute bottom-24 left-16 right-20 rounded-2xl border border-border bg-card px-4 py-3 shadow-md">
           <UIText className="text-xs text-muted-foreground">
             No hay {emptyLabel} con ubicación en el mapa.
           </UIText>
@@ -242,15 +247,18 @@ export function MapExplorer() {
   );
 }
 
-/** Burbuja circular del marker: color e ícono por tipo de recurso. */
+/** Burbuja circular del marker: color e ícono por tipo de recurso (espejado de la web). */
 function MarkerBubble({ kind }: { kind: MarkerKind }) {
   const meta = KIND_META[kind];
   return (
     <View
-      className={cn("h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-md", meta.container)}
-      style={{ elevation: 4 }}
+      className={cn(
+        "h-10 w-10 items-center justify-center rounded-full border-2 border-white shadow-md",
+        meta.container
+      )}
+      style={{ elevation: 5 }}
     >
-      <Icon as={meta.icon} size={14} className="text-white" />
+      <Icon as={meta.icon} size={18} className="text-white" />
     </View>
   );
 }
@@ -277,7 +285,7 @@ function boundsFrom(list: MapPoint[]): [number, number, number, number] | undefi
  */
 function toPoints<T extends Place | Restaurant | Event>(
   items: T[] | undefined,
-  kind: MarkerKind,
+  kind: MarkerKind
 ): MapPoint[] {
   if (!items) return [];
   return items.flatMap((item) => {

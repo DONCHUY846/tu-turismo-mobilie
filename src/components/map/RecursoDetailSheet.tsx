@@ -136,7 +136,7 @@ function SheetContent({
               as={Heart}
               size={18}
               className={isFavorite ? "text-red-500" : "text-foreground"}
-              fill={isFavorite ? "#ef4444" : "transparent"}
+              fill={isFavorite ? "#ef4444" : "none"}
             />
           </Pressable>
         ) : null}
@@ -221,7 +221,7 @@ function StarsRow({ rating, reviews }: { rating: number | null; reviews?: number
           as={Star}
           size={14}
           className="text-amber-500"
-          fill={index <= llenas ? "#f59e0b" : "transparent"}
+          fill={index <= llenas ? "#f59e0b" : "none"}
         />
       ))}
       <UIText className="text-xs text-muted-foreground">
