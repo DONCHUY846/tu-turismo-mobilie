@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
-import { View } from "react-native";
+import { Dimensions, View } from "react-native";
 
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { SectionErrorState } from "@/components/SectionErrorState";
@@ -28,6 +28,12 @@ const TIPO_POR_KIND: Record<MarkerKind, FavoriteTipo> = {
 /** margen (grados) al calcular los bounds para que ningún pin quede al borde */
 const BOUNDS_PADDING = 0.02;
 
+/** zoom al enfocar un recurso al presionar su pin (la web vuela a 16; aquí más cercano) */
+const FOCUS_ZOOM = 17;
+
+/** fracción del alto de pantalla que tapa el sheet de detalle (padding de la cámara) */
+const SHEET_COVER_RATIO = 0.55;
+
 export type MapExplorerProps = {
   /** selección inicial pedida desde otra pantalla (ej. "Ver más" del home) */
   initialSelection?: { kind: MarkerKind; id: string };
@@ -40,6 +46,8 @@ export function MapExplorer({ initialSelection }: MapExplorerProps = {}) {
   const [sheetOpen, setSheetOpen] = React.useState(false);
   /** timeout del cierre; se cancela si se reabre antes de que limpie el punto */
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** evita que el re-encuadre por filtro pise el zoom de enfoque (ver openPoint) */
+  const skipFilterReframe = React.useRef(false);
 
   /** filtro activo del rail ("all" por defecto) */
   const [filter, setFilter] = React.useState<MapFilter>("all");
@@ -98,15 +106,37 @@ export function MapExplorer({ initialSelection }: MapExplorerProps = {}) {
     eventsQuery.refetch();
   };
 
-  /** abre el sheet con un punto, cancelando un cierre aún pendiente de limpiar */
-  const openPoint = (point: MapPoint) => {
-    if (closeTimer.current) {
-      clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-    setSelected(point);
-    setSheetOpen(true);
-  };
+  /**
+   * Abre el sheet con un punto, cancelando un cierre aún pendiente de limpiar.
+   *
+   * `resetFilter` lo usa el deep link del home ("Ver más"): deja el rail en
+   * "Todos" para que el pin enfocado siempre se vea, sin que el re-encuadre
+   * del filtro pise el zoom de enfoque.
+   */
+  const openPoint = React.useCallback(
+    (point: MapPoint, options?: { resetFilter?: boolean }) => {
+      if (closeTimer.current) {
+        clearTimeout(closeTimer.current);
+        closeTimer.current = null;
+      }
+      if (options?.resetFilter && filter !== "all") {
+        skipFilterReframe.current = true;
+        setFilter("all");
+      }
+      setSelected(point);
+      setSheetOpen(true);
+
+      // Enfoca el recurso: zoom cercano y `padding` inferior para que el pin
+      // quede por encima del sheet (sin padding, flyTo lo centraría detrás).
+      mapRef.current?.flyTo(point.coordinate, {
+        zoom: FOCUS_ZOOM,
+        duration: 900,
+        easing: "fly",
+        padding: { bottom: Dimensions.get("window").height * SHEET_COVER_RATIO },
+      });
+    },
+    [filter]
+  );
 
   /** cierra el sheet y limpia el punto cuando la salida terminó (~300ms nativo) */
   const closeSheet = () => {
@@ -135,15 +165,22 @@ export function MapExplorer({ initialSelection }: MapExplorerProps = {}) {
     );
     if (!point) return;
     consumedInitialKey.current = key;
-    setFilter("all");
-    openPoint(point);
-  }, [initialSelection, points]);
+    // El param de navegación es una entrada externa: abrir el detalle una sola
+    // vez es el caso legítimo de sincronización; el guard de arriba lo hace
+    // idempotente (no hay renders en cascada).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    openPoint(point, { resetFilter: true });
+  }, [initialSelection, points, openPoint]);
 
   // Re-encuadre animado: al cambiar el filtro (o al terminar de cargar el
   // mapa) la cámara vuela a los pins visibles. Si el filtro queda sin pins
   // con coordenadas NO se mueve: aparece la tarjeta de vacío (Review Focus 5).
   React.useEffect(() => {
     if (!mapReady) return;
+    // el deep link del home ya enfocó su recurso: no lo pises con "Todos"
+    const skip = skipFilterReframe.current;
+    skipFilterReframe.current = false;
+    if (skip) return;
     const nextBounds = boundsFrom(filteredPoints);
     if (!nextBounds) return;
     mapRef.current?.fitBounds(nextBounds, { duration: 600, easing: "fly" });
