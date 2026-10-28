@@ -42,7 +42,6 @@ export function HeroBanner({
 }: HeroBannerProps) {
   return (
     <View className={cn("relative overflow-hidden bg-brand-dark", className)}>
-      {/* TODO: sustituir la imagen hardcodeada por el asset final del hero. */}
       {/* Nota: `expo-image` no tiene interop de NativeWind, así que el contenedor
           usa clases (View sí lo tiene) y el tamaño de la imagen va por `style`. */}
       <View className="absolute inset-0">

@@ -104,8 +104,7 @@ export const BOTTOM_TABS: BottomTab[] = [
 ];
 
 export const HERO = {
-  /** TODO: sustituir por el asset final del hero cuando esté disponible. */
-  image: require("../../assets/imagen-prueba.jpeg") as ImageSource,
+  image: require("../../assets/catedral.jpg") as ImageSource,
   title: "Conoce la tierra del",
   highlight: "tequila y el mariachi",
   subtitle:
