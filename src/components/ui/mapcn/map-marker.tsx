@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Marker } from "@maplibre/maplibre-react-native";
 import { createContext, useId, type ReactNode } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 export interface MarkerContextValue {
   coordinate: [number, number];
@@ -52,13 +52,20 @@ export function MapMarker({
 
   return (
     <MarkerContext value={{ coordinate }}>
-      <Marker id={id} lngLat={coordinate} anchor={anchorObjectToAnchorString(anchor)}>
-        <Pressable onPress={onPress}>
-          <View className="flex flex-row items-center justify-center">
-            {children || <DefaultMarkerIcon />}
-            {label && <MarkerLabel>{label}</MarkerLabel>}
-          </View>
-        </Pressable>
+      {/* En @maplibre/maplibre-react-native el toque sobre el pin lo despacha
+          `Marker.onPress` (en Android vía `MLRNMapView.onMapClick` ->
+          `findMarkerAtPoint`, porque `MLRNMarkerViewContent` tiene width/height
+          0 fuera de Yoga; en iOS vía `ViewAnnotation`). */}
+      <Marker
+        id={id}
+        lngLat={coordinate}
+        anchor={anchorObjectToAnchorString(anchor)}
+        onPress={onPress ? () => onPress() : undefined}
+      >
+        <View className="flex flex-row items-center justify-center">
+          {children || <DefaultMarkerIcon />}
+          {label && <MarkerLabel>{label}</MarkerLabel>}
+        </View>
       </Marker>
     </MarkerContext>
   );
