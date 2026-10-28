@@ -128,8 +128,11 @@ export function MapExplorer() {
 
   return (
     <Map
-      // sin `style`: el provider CARTO resuelve Voyager (claro) / Dark Matter (oscuro)
-      // según el colorScheme, así que el modo oscuro del mapa es gratis.
+      // sin `style`: el provider CARTO resuelve Voyager (claro) / Dark Matter (oscuro).
+      // Hoy el app no tiene paleta oscura (TODO en global.css), así que el mapa
+      // se fija en claro para no mezclar tiles oscuros con UI clara. Al soportar
+      // dark mode, quitar este pin y el basemap alterna solo.
+      colorScheme="light"
       defaultViewport={{ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }}
       bounds={bounds}
       attribution={{ position: "bottom-left" }}

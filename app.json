@@ -11,7 +11,7 @@
       "icon": "./assets/expo.icon",
       "bundleIdentifier": "com.donchuy846.tuturismomobile",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Show your location on the map."
+        "NSLocationWhenInUseUsageDescription": "Tu Turismo necesita tu ubicación para mostrarte en el mapa y encontrar lugares cerca de ti."
       }
     },
     "android": {
