@@ -128,7 +128,7 @@ function Map({
   onPress,
   onLongPress,
   onLoad,
-  onError: _onError,
+  onError,
   className,
   containerStyle,
   loader,
@@ -255,6 +255,20 @@ function Map({
     onLoad?.();
   }, [onLoad]);
 
+  // MapLibre expone `onDidFailLoadingMap` para fallos al cargar el mapa
+  // (tiles red, estilo inválido, red caída). Sin este cable, el mapa se
+  // queda en blanco sin señal para el usuario ni para el desarrollador.
+  const handleMapLoadError = useCallback(
+    (event: unknown) => {
+      const message =
+        (event as { nativeEvent?: { message?: string } } | null)?.nativeEvent?.message ??
+        "El mapa no pudo cargar sus recursos.";
+      console.error("[mapcn] map failed to load:", message);
+      onError?.(new Error(message));
+    },
+    [onError],
+  );
+
   return (
     <MapContext value={instance}>
       <OverlayContext value={overlayContextValue}>
@@ -267,6 +281,7 @@ function Map({
           // StyleSpecification into it (plan §2 D3) -- cast at this boundary.
           mapStyle={mapStyle as never}
           onDidFinishLoadingMap={handleMapIdle}
+          onDidFailLoadingMap={handleMapLoadError}
           onRegionIsChanging={handleRegionIsChanging}
           onRegionDidChange={handleRegionDidChange}
           onPress={onPress ? ((e) => onPress(normalizePress(e))) : undefined}

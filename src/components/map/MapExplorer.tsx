@@ -36,15 +36,15 @@ const KIND_META: Record<MarkerKind, { container: string; icon: LucideIcon }> = {
   event: { container: "bg-violet-500", icon: CalendarDays },
 };
 
-/** Cámara inicial: centro de Jalisco. */
-const DEFAULT_CENTER: [number, number] = [-103.35, 20.66];
-const DEFAULT_ZOOM = 9;
 /** margen (grados) al calcular los bounds para que ningún pin quede al borde */
 const BOUNDS_PADDING = 0.02;
 
 /** Mapa de exploración: places + restaurants + events como markers con popup. */
 export function MapExplorer() {
   const [selected, setSelected] = React.useState<MapPoint | null>(null);
+  /** error de carga del mapa (tiles/estilo); el reintento remonta el mapa */
+  const [mapError, setMapError] = React.useState<string | null>(null);
+  const [reloadKey, setReloadKey] = React.useState(0);
 
   const placesQuery = useQuery({
     queryKey: ["map", "places"],
@@ -126,16 +126,35 @@ export function MapExplorer() {
     );
   }
 
+  if (mapError) {
+    return (
+      <View className="flex-1 justify-center px-4 pb-4">
+        <SectionErrorState
+          title="El mapa no pudo cargar"
+          detail={mapError}
+          onRetry={() => {
+            setMapError(null);
+            setReloadKey((key) => key + 1);
+          }}
+        />
+      </View>
+    );
+  }
+
   return (
     <Map
       // sin `style`: el provider CARTO resuelve Voyager (claro) / Dark Matter (oscuro).
       // Hoy el app no tiene paleta oscura (TODO en global.css), así que el mapa
       // se fija en claro para no mezclar tiles oscuros con UI clara. Al soportar
       // dark mode, quitar este pin y el basemap alterna solo.
+      key={reloadKey}
       colorScheme="light"
-      defaultViewport={{ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }}
       bounds={bounds}
       attribution={{ position: "bottom-left" }}
+      onError={(error) => {
+        setSelected(null);
+        setMapError(error.message);
+      }}
     >
       {points.map((point) => (
         <MapMarker key={`${point.kind}-${point.id}`} coordinate={point.coordinate} onPress={() => setSelected(point)}>
