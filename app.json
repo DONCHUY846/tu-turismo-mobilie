@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.donchuy846.tuturismomobile"
+      "bundleIdentifier": "com.donchuy846.tuturismomobile",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Show your location on the map."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +23,11 @@
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
-      "package": "com.donchuy846.tuturismomobile"
+      "package": "com.donchuy846.tuturismomobile",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -44,7 +51,8 @@
           "cameraPermission": "Tu Turismo necesita la cámara para que puedas tomar tu foto de perfil.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "experiments": {
       "typedRoutes": true,
