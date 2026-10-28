@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { EventCard } from "@/components/EventCard";
@@ -24,6 +25,7 @@ export type UpcomingEventsProps = {
  * tienen fechas ya pasadas; no se filtran para que la sección nunca salga vacía.
  */
 export function UpcomingEvents({ limit = 4 }: UpcomingEventsProps) {
+  const router = useRouter();
   const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ["events", { limit }],
     queryFn: () => fetchEvents({ limit }),
@@ -69,7 +71,7 @@ export function UpcomingEvents({ limit = 4 }: UpcomingEventsProps) {
       {events.length > 0 ? (
         <View className={cn("gap-4", isRefetching && "opacity-60")}>
           {events.map((event) => (
-            <EventCard key={event.id} event={event} />
+            <EventCard key={event.id} event={event} onPress={() => router.push({ pathname: "/mapa", params: { kind: "event", id: event.id } })} />
           ))}
         </View>
       ) : null}

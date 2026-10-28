@@ -28,8 +28,13 @@ const TIPO_POR_KIND: Record<MarkerKind, FavoriteTipo> = {
 /** margen (grados) al calcular los bounds para que ningún pin quede al borde */
 const BOUNDS_PADDING = 0.02;
 
+export type MapExplorerProps = {
+  /** selección inicial pedida desde otra pantalla (ej. "Ver más" del home) */
+  initialSelection?: { kind: MarkerKind; id: string };
+};
+
 /** Mapa de exploración a cuerpo completo con rail flotante de categorías y modal de detalle. */
-export function MapExplorer() {
+export function MapExplorer({ initialSelection }: MapExplorerProps = {}) {
   const [selected, setSelected] = React.useState<MapPoint | null>(null);
   /** visible/point van separadas: el contenido no parpadea en la salida */
   const [sheetOpen, setSheetOpen] = React.useState(false);
@@ -118,6 +123,21 @@ export function MapExplorer() {
       if (closeTimer.current) clearTimeout(closeTimer.current);
     };
   }, []);
+
+  /** abre el detalle del recurso pedido desde otra pantalla ("Ver más" del home) */
+  const consumedInitialKey = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!initialSelection || points.length === 0) return;
+    const key = `${initialSelection.kind}:${initialSelection.id}`;
+    if (consumedInitialKey.current === key) return;
+    const point = points.find(
+      (p) => p.kind === initialSelection.kind && p.id === initialSelection.id
+    );
+    if (!point) return;
+    consumedInitialKey.current = key;
+    setFilter("all");
+    openPoint(point);
+  }, [initialSelection, points]);
 
   // Re-encuadre animado: al cambiar el filtro (o al terminar de cargar el
   // mapa) la cámara vuela a los pins visibles. Si el filtro queda sin pins

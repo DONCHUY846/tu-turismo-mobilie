@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { PlaceCard } from "@/components/PlaceCard";
@@ -24,6 +25,7 @@ export type FeaturedPlacesProps = {
  * la UI para cambiarlos todavía no existe.
  */
 export function FeaturedPlaces({ limit = 4 }: FeaturedPlacesProps) {
+  const router = useRouter();
   const filters = usePlacesStore(selectPlacesFilters);
 
   const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
@@ -68,7 +70,7 @@ export function FeaturedPlaces({ limit = 4 }: FeaturedPlacesProps) {
       {places.length > 0 ? (
         <View className={cn("gap-4", isRefetching && "opacity-60")}>
           {places.map((place) => (
-            <PlaceCard key={place.id} place={place} />
+            <PlaceCard key={place.id} place={place} onPressMore={() => router.push({ pathname: "/mapa", params: { kind: "place", id: place.id } })} />
           ))}
         </View>
       ) : null}

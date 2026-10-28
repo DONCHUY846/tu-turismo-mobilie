@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { RestaurantCard } from "@/components/RestaurantCard";
@@ -22,6 +23,7 @@ export type RecommendedRestaurantsProps = {
  * se respeta el orden en que los devuelve el backend.
  */
 export function RecommendedRestaurants({ limit = 4 }: RecommendedRestaurantsProps) {
+  const router = useRouter();
   const { data, isPending, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ["restaurants", { limit }],
     queryFn: () => fetchRestaurants({ limit }),
@@ -64,7 +66,7 @@ export function RecommendedRestaurants({ limit = 4 }: RecommendedRestaurantsProp
       {restaurants.length > 0 ? (
         <View className={cn("gap-4", isRefetching && "opacity-60")}>
           {restaurants.map((restaurant) => (
-            <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+            <RestaurantCard key={restaurant.id} restaurant={restaurant} onPressMore={() => router.push({ pathname: "/mapa", params: { kind: "restaurant", id: restaurant.id } })} />
           ))}
         </View>
       ) : null}
