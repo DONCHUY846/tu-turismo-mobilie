@@ -47,7 +47,7 @@ export function MapExplorer() {
   const [reloadKey, setReloadKey] = React.useState(0);
 
   const isAuthenticated = useAuthStore(selectIsAuthenticated);
-  const { isFavorite, toggle, isToggling } = useFavoriteToggle();
+  const { isFavorite, toggle, isToggling, toggleError } = useFavoriteToggle();
 
   const placesQuery = useQuery({
     queryKey: ["map", "places"],
@@ -236,6 +236,7 @@ export function MapExplorer() {
           if (selected) toggle(selected.id, TIPO_POR_KIND[selected.kind]);
         }}
         isToggling={isToggling}
+        toggleError={toggleError}
       />
     </View>
   );

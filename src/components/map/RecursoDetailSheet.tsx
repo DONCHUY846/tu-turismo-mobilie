@@ -35,6 +35,8 @@ export type RecursoDetailSheetProps = {
   isFavorite: boolean;
   onToggleFavorite: () => void;
   isToggling: boolean;
+  /** mensaje del último error del toggle (null si no hay); se limpia al reintentar */
+  toggleError?: string | null;
 };
 
 /**
@@ -54,6 +56,7 @@ export function RecursoDetailSheet({
   isFavorite,
   onToggleFavorite,
   isToggling,
+  toggleError,
 }: RecursoDetailSheetProps) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -64,7 +67,17 @@ export function RecursoDetailSheet({
           onPress={onClose}
         />
         <View className="absolute inset-x-0 bottom-0 max-h-[85%] overflow-hidden rounded-t-3xl bg-background">
-          {point ? <SheetContent {...{ point, onClose, canFavorite, isFavorite, onToggleFavorite, isToggling }} /> : null}
+          {point ? (
+            <SheetContent
+              point={point}
+              onClose={onClose}
+              canFavorite={canFavorite}
+              isFavorite={isFavorite}
+              onToggleFavorite={onToggleFavorite}
+              isToggling={isToggling}
+              toggleError={toggleError}
+            />
+          ) : null}
         </View>
       </View>
     </Modal>
@@ -73,7 +86,15 @@ export function RecursoDetailSheet({
 
 type SheetContentProps = Omit<RecursoDetailSheetProps, "point" | "visible"> & { point: MapPoint };
 
-function SheetContent({ point, onClose, canFavorite, isFavorite, onToggleFavorite, isToggling }: SheetContentProps) {
+function SheetContent({
+  point,
+  onClose,
+  canFavorite,
+  isFavorite,
+  onToggleFavorite,
+  isToggling,
+  toggleError,
+}: SheetContentProps) {
   const { kind, item } = point;
   const tipoLabel = kind === "place" ? "Lugar" : kind === "restaurant" ? "Restaurante" : "Evento";
 
@@ -149,13 +170,18 @@ function SheetContent({ point, onClose, canFavorite, isFavorite, onToggleFavorit
           </View>
         )}
 
+        {toggleError ? (
+          <UIText className="text-xs font-medium text-destructive">{toggleError}</UIText>
+        ) : null}
+
         <UIText className="text-sm leading-5 text-foreground">
           {item.descripcion || "Sin descripción todavía."}
         </UIText>
 
         <View className="gap-y-2 pt-1">
           <UIText className="text-sm font-semibold text-foreground">Información</UIText>
-          {"rating_promedio" in item && item.direccion ? (
+          {/* dirección: places y restaurantes la traen; los eventos no */}
+          {"fecha_inicio" in item ? null : item.direccion ? (
             <InfoRow icon={MapPin} label={item.direccion} />
           ) : null}
           <InfoRow icon={Building2} label={item.municipio} />

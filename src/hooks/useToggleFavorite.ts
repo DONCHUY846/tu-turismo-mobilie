@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as React from "react";
 
+import { ApiError } from "@/lib/api";
 import {
   createFavorite,
   deleteFavorite,
@@ -17,6 +18,13 @@ export type UseFavoriteToggleResult = {
   toggle: (referenciaId: string, tipo: FavoriteTipo) => void;
   /** `true` mientras la mutación está en vuelo (deshabilita el botón). */
   isToggling: boolean;
+  /**
+   * Mensaje del último error del toggle (null si no hay). El servidor puede
+   * rechazar un toggle que la caché ya había aplicado (favorito eliminado en
+   * otro dispositivo, alta duplicada): el corazón revierte y esto explica por
+   * qué. Se limpia solo al reintentar (nueva mutación resetea el error).
+   */
+  toggleError: string | null;
 };
 
 type ToggleVariables = {
@@ -118,5 +126,12 @@ export function useFavoriteToggle(): UseFavoriteToggleResult {
     [enabled, mutation, favorites.data]
   );
 
-  return { isFavorite, toggle, isToggling: mutation.isPending };
+  const toggleError = React.useMemo(() => {
+    const error = mutation.error;
+    if (!error) return null;
+    if (error instanceof ApiError && error.detail) return error.detail;
+    return error.message || "No se pudo actualizar el favorito.";
+  }, [mutation.error]);
+
+  return { isFavorite, toggle, isToggling: mutation.isPending, toggleError };
 }
