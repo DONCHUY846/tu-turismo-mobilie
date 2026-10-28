@@ -81,7 +81,7 @@ Docs: https://reactnativereusables.com/docs/installation/manual
 ## Autenticación
 
 - `src/services/auth.ts` — `login`, `refreshSession` y `fetchProfile`. Estos endpoints responden **JSON plano** (sin sobre `{success,data}`), por eso usan `apiRequest` y no `apiFetch`.
-- `src/services/auth.ts` — además `register()` (POST `/core/auth/register/`, responde igual que el login: **registrarse inicia sesión**) y `updateProfile()` (PUT `/core/auth/me/`, acepta `nombre`, `apellido`, `email`, `telefono`, `avatar` y `password`) y `uploadAvatar()` (POST `/core/upload/`, `FormData` con `file` + `folder: "tu-turismo/avatars"`).
+- `src/services/auth.ts` — además `register()` (POST `/core/auth/register/`, responde igual que el login: **registrarse inicia sesión**), `updateProfile()` (PUT `/core/auth/me/`, acepta `nombre`, `apellido`, `email`, `telefono`, `avatar` y `password`), `uploadAvatar()` (POST `/core/upload/`, `FormData` con `file` + `folder: "tu-turismo/avatars"`) y la **recuperación de contraseña**: `sendPasswordCode`, `verifyPasswordCode`, `resetPassword` (POST `/auth/password/send-code|verify-code|reset/`; **sin** el prefijo `core`). Todos responden JSON plano con `authenticated: false` (solo se llaman de invitado), y sus errores vienen en `{ success, message }` (no en `{ error, detail }`).
 - El `rol` del alta va **siempre fijo en `"turista"`**: el backend acepta el que le mande el cliente (incluso `"admin"`), así que no se toma de los datos del formulario.
 - `src/stores/auth-store.ts` — Zustand + `persist` sobre un adaptador de `expo-secure-store`. Estado: `status: "loading" | "authenticated" | "guest"`, `accessToken`, `refreshToken`, `expiresAt`, `user`, `sessionExpired`. Se persiste solo la sesión, nunca `status` ni `sessionExpired`.
 - **El transporte es el dueño del token** (`src/lib/api.ts`): `apiRequest` inyecta `Authorization: Bearer <accessToken>` y renueva la sesión. Los servicios **no** reciben ni mandan tokens, y los endpoints de auth se marcan con `authenticated: false` para que no se intente refrescar.
@@ -98,10 +98,13 @@ Docs: https://reactnativereusables.com/docs/installation/manual
   - El backend **no tiene endpoint de logout** (ni blacklist): el cierre es local. El refresh token sigue vivo en el servidor hasta expirar, pero se borra del dispositivo.
   - El login solo se alcanza con `push` (desde la tarjeta de invitado), así que su botón "Volver" siempre tiene destino. El logout no pasa por el login: manda a Inicio, ya como invitado.
 - Después de `signIn()` hay que navegar con `router.replace("/")`, nunca `push` (para no dejar el login en el historial).
-- TODO global: no hay endpoint de logout (el token expira solo) ni de recuperación de contraseña.
+- TODO global: no hay endpoint de logout (el token expira solo).
+- **Recuperación de contraseña** (`/recuperar-contrasena`, solo invitados): tres pasos en una pantalla — correo (`send-code`), código (`verify-code`) y contraseña nueva (`reset`) — con el correo y el código en el estado local de la pantalla; al terminar regresa al login con `reason=password-reset`. Se llega desde el enlace "¿Olvidaste tu contraseña?" del `LoginForm`.
 - Pendiente del backend (bloquean features, no son del cliente):
   - `POST /core/upload/` responde **500** (`Invalid cloud_name tuturismo`): el cloud name correcto es `dxcqksjbp`. Hasta que se arregle, la foto de perfil no se puede subir.
   - `PUT /core/auth/me/` con `password` responde **500**: el serializer no llama `set_password`. El formulario de `/editar-perfil` ya manda el campo, listo para cuando se arregle.
+  - **El correo de recuperación no llega**: `send-code` responde **200** `"Código enviado correctamente. Revisa tu correo o consola de logs."`, pero sin SMTP el código solo cae en los logs del servidor. Todo el flujo del cliente ya está listo; falta la entrega real para probar el paso de verificar + resetear con un código válido.
+  - Duda abierta del flujo: `verify-code` y `reset` usan el mismo mensaje *"El código es incorrecto o ya fue utilizado."* — no está confirmado si **`verify-code` consume el código** al verificarlo. Si al resetear tras verificar saliera ese error, hay que quitar la llamada a `verifyPasswordCode` (el `reset` valida el código por sí mismo): un cambio de una línea en `src/app/recuperar-contrasena.tsx`.
 
 ## Rules
 
