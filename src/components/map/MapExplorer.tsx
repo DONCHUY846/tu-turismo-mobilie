@@ -8,27 +8,11 @@ import { SectionErrorState } from "@/components/SectionErrorState";
 import { Icon } from "@/components/ui/icon";
 import { Map, MapControls, MapMarker, MapPopup } from "@/components/ui/mapcn";
 import { Text as UIText } from "@/components/ui/text";
-import { formatDateRange } from "@/lib/format";
-import { fetchEvents } from "@/services/events";
-import { fetchPlaces } from "@/services/places";
-import { fetchRestaurants } from "@/services/restaurants";
+import { fetchEvents, type Event } from "@/services/events";
+import { fetchPlaces, type Place } from "@/services/places";
+import { fetchRestaurants, type Restaurant } from "@/services/restaurants";
 import { cn } from "@/lib/utils";
-
-/** Tipos de recurso que el mapa muestra (misma terna que la web). */
-type MarkerKind = "place" | "restaurant" | "event";
-
-/** Un pin del mapa, normalizado entre los tres recursos. */
-type MapPoint = {
-  id: string;
-  kind: MarkerKind;
-  nombre: string;
-  municipio: string;
-  categoria: string;
-  /** solo eventos: rango de fechas ya formateado */
-  fecha?: string;
-  /** [lng, lat] */
-  coordinate: [number, number];
-};
+import type { MapPoint, MarkerKind } from "./types";
 
 const KIND_META: Record<MarkerKind, { container: string; icon: LucideIcon }> = {
   place: { container: "bg-blue-500", icon: MapPin },
@@ -63,15 +47,9 @@ export function MapExplorer() {
   const allFailed = placesQuery.isError && restaurantsQuery.isError && eventsQuery.isError;
 
   const points = React.useMemo<MapPoint[]>(() => {
-    const placePoints = toPoints(placesQuery.data, "place", (item) => ({
-      fecha: undefined,
-    }));
-    const restaurantPoints = toPoints(restaurantsQuery.data, "restaurant", () => ({
-      fecha: undefined,
-    }));
-    const eventPoints = toPoints(eventsQuery.data, "event", (item) => ({
-      fecha: formatDateRange(item.fecha_inicio, item.fecha_fin || undefined),
-    }));
+    const placePoints = toPoints(placesQuery.data, "place");
+    const restaurantPoints = toPoints(restaurantsQuery.data, "restaurant");
+    const eventPoints = toPoints(eventsQuery.data, "event");
     return [...placePoints, ...restaurantPoints, ...eventPoints];
   }, [placesQuery.data, restaurantsQuery.data, eventsQuery.data]);
 
@@ -198,15 +176,13 @@ function MarkerBubble({ kind }: { kind: MarkerKind }) {
  * Convierte una lista de la API en puntos de mapa. Filtra lo que el plan
  * exige: sin coordenadas o inactivo no se muestra (nunca se asume lat/lng).
  */
-function toPoints<T extends { id: string; nombre: string; municipio: string; categoria: string; activo: boolean; coordenadas: { lng: number; lat: number } | null }>(
+function toPoints<T extends Place | Restaurant | Event>(
   items: T[] | undefined,
   kind: MarkerKind,
-  extra: (item: T) => { fecha?: string },
 ): MapPoint[] {
   if (!items) return [];
   return items.flatMap((item) => {
     if (!item.coordenadas || item.activo === false) return [];
-    const fecha = extra(item).fecha;
     return [
       {
         id: item.id,
@@ -214,8 +190,8 @@ function toPoints<T extends { id: string; nombre: string; municipio: string; cat
         nombre: item.nombre,
         municipio: item.municipio,
         categoria: item.categoria,
-        ...(fecha ? { fecha } : {}),
         coordinate: [item.coordenadas.lng, item.coordenadas.lat],
+        item,
       },
     ];
   });
