@@ -17,7 +17,8 @@ import { useAuthStore } from "@/stores/auth-store";
  * Pantalla de acceso de Tu Turismo (`/login`).
  *
  * Bloques:
- *  1. Botón de regreso — vuelve a donde se entrée (Perfil).
+ *  1. Botón de regreso — vuelve a la pantalla anterior; si no hay historial
+ *     (acceso directo desde Perfil), va a Inicio.
  *  2. LoginArtwork  — ilustración de heritage de Jalisco.
  *  3. LoginSheet    — tarjeta con el título y `LoginForm`.
  *
@@ -37,7 +38,8 @@ export default function Login() {
     mutationFn: login,
     onSuccess: (session) => {
       signIn(session);
-      router.replace("/");
+      // Se llegó desde Perfil (o por session expirada): aterriza en el perfil.
+      router.replace("/perfil");
     },
   });
 
@@ -69,7 +71,7 @@ export default function Login() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Volver"
-          onPress={() => router.back()}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
           className="mb-3 h-9 w-9 items-center justify-center rounded-xl border border-border bg-card active:opacity-70"
         >
           <Icon as={ChevronLeft} className="text-slate-600" size={20} />

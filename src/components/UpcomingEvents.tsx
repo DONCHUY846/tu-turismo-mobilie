@@ -71,7 +71,7 @@ export function UpcomingEvents({ limit = 4 }: UpcomingEventsProps) {
       {events.length > 0 ? (
         <View className={cn("gap-4", isRefetching && "opacity-60")}>
           {events.map((event) => (
-            <EventCard key={event.id} event={event} onPress={() => router.push({ pathname: "/mapa", params: { kind: "event", id: event.id } })} />
+            <EventCard key={event.id} event={event} onPress={() => router.push({ pathname: "/explorar", params: { kind: "event", id: event.id } })} />
           ))}
         </View>
       ) : null}

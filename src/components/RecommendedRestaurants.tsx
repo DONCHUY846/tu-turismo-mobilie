@@ -66,7 +66,7 @@ export function RecommendedRestaurants({ limit = 4 }: RecommendedRestaurantsProp
       {restaurants.length > 0 ? (
         <View className={cn("gap-4", isRefetching && "opacity-60")}>
           {restaurants.map((restaurant) => (
-            <RestaurantCard key={restaurant.id} restaurant={restaurant} onPressMore={() => router.push({ pathname: "/mapa", params: { kind: "restaurant", id: restaurant.id } })} />
+            <RestaurantCard key={restaurant.id} restaurant={restaurant} onPressMore={() => router.push({ pathname: "/explorar", params: { kind: "restaurant", id: restaurant.id } })} />
           ))}
         </View>
       ) : null}

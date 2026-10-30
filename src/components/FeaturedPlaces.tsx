@@ -70,7 +70,7 @@ export function FeaturedPlaces({ limit = 4 }: FeaturedPlacesProps) {
       {places.length > 0 ? (
         <View className={cn("gap-4", isRefetching && "opacity-60")}>
           {places.map((place) => (
-            <PlaceCard key={place.id} place={place} onPressMore={() => router.push({ pathname: "/mapa", params: { kind: "place", id: place.id } })} />
+            <PlaceCard key={place.id} place={place} onPressMore={() => router.push({ pathname: "/explorar", params: { kind: "place", id: place.id } })} />
           ))}
         </View>
       ) : null}

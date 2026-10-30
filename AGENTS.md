@@ -26,7 +26,7 @@ Run lint and typecheck before declaring any task done.
 ## Navigation & Routing
 
 - Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Estructura actual: `src/app/(tabs)/` (Inicio, Explorar, Mapa, Perfil) con la barra inferior propia vía `tabBar` en `(tabs)/_layout.tsx`; `login.tsx` vive en el Stack raíz para que no herede las pestañas. El grupo `(tabs)` no aparece en la URL: `(tabs)/index.tsx` sigue siendo `/`.
+- Estructura actual: `src/app/(tabs)/` (Inicio, Explorar, Perfil) con la barra inferior propia vía `tabBar` en `(tabs)/_layout.tsx`; `login.tsx` vive en el Stack raíz para que no herede las pestañas. El grupo `(tabs)` no aparece en la URL: `(tabs)/index.tsx` sigue siendo `/`. El mapa vive en `(tabs)/explorar.tsx`.
 - Rutas privadas: `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}` (ver `(app)/_layout.tsx`) y registrado en el Stack raíz con `<Stack.Screen name="(app)" />`. El grupo tampoco aparece en la URL: `(app)/editar-perfil.tsx` es `/editar-perfil`.
 - La barra de navegación usa **JS tabs** (`expo-router/tabs`) y no native tabs, para conservar los íconos de lucide y los colores de marca. `AppTabBar` (`src/components/navigation/`) adapta las rutas del navegador a `BottomTabBar`.
 - Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
@@ -111,7 +111,7 @@ El mapa de exploración usa **mapcn-rn** (copy-owned, mismo espíritu que reusab
 - Si el refresh token también expiró, `expireSession()` deja `status: "guest"` y `sessionExpired: true`; `SessionExpiryWatcher` en `src/app/_layout.tsx` manda al login con `params: { reason: "expired" }` y el login avisa *"Tu sesión expiró. Vuelve a iniciar sesión."*.
 - El splash se oculta en `src/app/_layout.tsx` cuando `status !== "loading"` y las fuentes están cargadas: evita el parpadeo del login.
 - Rutas: `src/app/_layout.tsx` declara `unstable_settings.anchor = "(tabs)"` y protege con `<Stack.Protected guard={...}>`. Hoy solo el login está protegido; cuando existan rutas privadas, agrúpalas en `src/app/(app)/` con su propio `Stack.Protected guard={isAuthenticated}`.
-- El acceso al login es **solo desde `src/app/(tabs)/perfil.tsx`**: invitado → `ProfileGuestCard` con botón a `/login`; con sesión → datos de `auth/me/` y botón de cerrar sesión.
+- El acceso al login es **solo desde `src/app/(tabs)/perfil.tsx`**: invitado → la pestaña redirige a `/login`; con sesión → datos de `auth/me/` y botón de cerrar sesión.
 - **Cerrar sesión**: `src/hooks/useSignOut.ts` (`signOut()` + `queryClient.clear()` + `router.navigate("/")`). El botón pide confirmación con un `AlertDialog` (componente de `react-native-reusables`, ya instalado) dentro de `ProfileActions`.
   - `queryClient.clear()` es obligatorio: sin él, la query `["profile", userId]` y la caché de favoritos seguirían mostrando datos del usuario anterior al entrar con otra cuenta.
   - El backend **no tiene endpoint de logout** (ni blacklist): el cierre es local. El refresh token sigue vivo en el servidor hasta expirar, pero se borra del dispositivo.

@@ -1,29 +1,30 @@
+import { useLocalSearchParams } from "expo-router";
 import { View } from "react-native";
 
 import { AppHeader } from "@/components/AppHeader";
-import { SectionHeader } from "@/components/SectionHeader";
-import { SectionPlaceholder } from "@/components/SectionPlaceholder";
+import { MapExplorer } from "@/components/map/MapExplorer";
+import type { MarkerKind } from "@/components/map/types";
 
 /**
- * Pantalla "Explorar" (pestaña 2).
+ * Pantalla "Explorar" (pestaña 2): mapa nativo (mapcn-rn + MapLibre/CARTO) con
+ * markers de places, restaurants y events; presionar un marker abre el modal
+ * de detalle (con favorito) y los chips filtran por tipo de recurso.
  *
- * TODO: cuando existan las pantallas de lugares, eventos y restaurantes, esta
- * pantalla pasa a ser el buscador con filtros (la categoría vive en
- * `usePlacesStore`) y navegará a esas rutas.
+ * Las tarjetas de Inicio abren esta pestaña con `kind` e `id` para encuadrar y
+ * seleccionar el recurso.
  */
 export default function Explorar() {
+  const { kind, id } = useLocalSearchParams<{ kind?: string; id?: string }>();
+
+  const initialSelection =
+    kind && id && (kind === "place" || kind === "restaurant" || kind === "event")
+      ? { kind: kind as MarkerKind, id }
+      : undefined;
+
   return (
     <View className="flex-1 bg-background">
       <AppHeader />
-      <View className="flex-1 px-4 pt-8">
-        <SectionHeader
-          align="center"
-          title="Explora todo Jalisco"
-          subtitle="Busca por categoría, municipio o nombre para encontrar tu próximo destino."
-        />
-        {/* TODO: buscador con filtros + resultados. */}
-        <SectionPlaceholder hint="Buscador y resultados" height={220} />
-      </View>
+      <MapExplorer initialSelection={initialSelection} />
     </View>
   );
 }
