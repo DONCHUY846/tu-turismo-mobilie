@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck, lint, pruebas y build de humo
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Diagnóstico de Expo
+        run: npx expo-doctor@1
+
+      - name: Pruebas con cobertura
+        run: npm run test:ci
+
+      # Los avisos restantes son moderados y transitivos del tooling de Expo
+      # y Jest, sin corrección no disruptiva. Se bloquean "high" o superiores.
+      - name: Auditoría de dependencias (bloquea high y critical)
+        run: npm audit --audit-level=high
+
+      - name: Reporte completo de auditoría (informativo)
+        run: npm audit || true
+
+      - name: Build de humo (bundle Android)
+        run: npx expo export --platform android
+
+      - name: Subir cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Subir bundle de humo
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-bundle
+          path: dist/
+          if-no-files-found: ignore
+          retention-days: 7

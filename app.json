@@ -22,6 +22,7 @@
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
       "package": "com.donchuy846.tuturismomobile",
+      "versionCode": 5,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION"
@@ -50,7 +51,10 @@
           "microphonePermission": false
         }
       ],
-      "@maplibre/maplibre-react-native"
+      "@maplibre/maplibre-react-native",
+      "expo-image",
+      "expo-status-bar",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -61,11 +65,7 @@
         "asyncRoutes": {
           "web": true
         }
-      },
-      "eas": {
-        "projectId": "76c02f39-a7f7-4b67-a530-92a172e4c95b"
       }
-    },
-    "owner": "donchuy846"
+    }
   }
 }
