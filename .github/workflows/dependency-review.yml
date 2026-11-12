@@ -20,7 +20,7 @@ jobs:
       # Se bloquean vulnerabilidades altas o críticas en dependencias nuevas.
       # Los avisos moderados actuales son transitivos del tooling.
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
           comment-summary-in-pr: always
