@@ -33,10 +33,15 @@ Run lint and typecheck before declaring any task done.
 - Enlaces del footer (`src/data/home.ts`): el `href` decide cómo se abre — URL externa → `Linking.openURL` (navegador del sistema), ancla `#seccion` → scroll a la sección de la home (el home mide cada sección con `onLayout` y el `AppFooter` recibe `onPressAnchor`), ruta interna → `router.push` cuando existan.
 - Docs: https://docs.expo.dev/router/introduction.md
 
-## Building with EAS
+## Build y release local
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+El proyecto **no usa EAS ni automatiza la publicación**: no hay `eas.json`, perfiles ni credenciales de Expo/Google en GitHub. El build se hace en la máquina del responsable con Expo CLI + Android SDK + Gradle, y el AAB se sube a mano a Play Console.
+
+- Dev build: `npx expo run:android`
+- Release: `npx expo prebuild --platform android`, configurar la upload key y ejecutar `cd android && ./gradlew app:bundleRelease`
+- El procedimiento completo está en `README.md` y en la guía de `entrega-final/`.
+
+Docs: https://docs.expo.dev/guides/local-app-development/ y https://docs.expo.dev/guides/local-app-production/
 
 ## Componentes: react-native-reusables
 
@@ -73,7 +78,7 @@ El mapa de exploración usa **mapcn-rn** (copy-owned, mismo espíritu que reusab
 - El ornamento `attribution={{ position: "bottom-left" }}` es requisito legal del basemap CARTO/OSM — no lo quites.
 - Estados: skeleton (CardSkeleton) mientras cargan los 3 recursos, `SectionErrorState` si fallan los tres **o** si el mapa no carga (tiles/estilo; el reintento remonta el `Map` cambiando su `key`), y texto de vacío si no hay puntos con coordenadas. Un solo recurso fallando ⇒ se muestran los otros dos.
 - Rendimiento: hasta ~300 `MapMarker` nativos pueden laggear en Android; mapcn recomienda capas GeoJSON arriba de ~100. Si el teléfono lo sufre: `npx mapcn-rn add geojson` y migrar los puntos a la capa.
-- **Requiere dev build** (MapLibre no viene en Expo Go): `eas.json` ya tiene el perfil `development` (APK Android, proyecto EAS `donchuy846/tu-turismo-mobile` ya linkeado). Probar en teléfono: `npx eas-cli@latest build --profile development --platform android`, instalar el APK y conectar con `npx expo start --tunnel --dev-client`.
+- **Requiere dev build** (MapLibre no viene en Expo Go): compilar localmente con `npx expo run:android`, instalar la app en el teléfono y conectar con `npx expo start --tunnel --dev-client`.
 - Lint: `@typescript-eslint/array-type` está apagada para los paths vendidos en `eslint.config.js` (los warnings eran del CLI, no del app).
 
 ## Datos, estado y caché
@@ -127,6 +132,6 @@ El mapa de exploración usa **mapcn-rn** (copy-owned, mismo espíritu que reusab
 
 ## Rules
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never edit them by hand for app behavior — configure that in `app.json` and config plugins. La única excepción es la firma `release` de Android (`android/app/build.gradle`) que exige el build local; `android/` está ignorado y es regenerable.
+- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
